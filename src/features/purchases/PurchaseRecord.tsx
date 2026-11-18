@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   Tag,
@@ -44,6 +44,7 @@ interface Purchase {
   deviceModel: string;
   snPrefix: string;
   snPadding: number;
+  snStart?: number;
   totalItem: number;
   status: PurchaseStatus;
   rejectedDate?: string;
@@ -167,6 +168,43 @@ function generateSerialNumber(prefix: string, padding: number, number: number) {
   return `${prefix}-${String(number).padStart(padding, '0')}`;
 }
 
+function getSerialNumberValue(serialNumber: string, prefix: string): number | null {
+  const normalizedPrefix = `${prefix}-`;
+  if (!serialNumber.startsWith(normalizedPrefix)) return null;
+  const suffix = serialNumber.slice(normalizedPrefix.length);
+  if (!/^\d+$/.test(suffix)) return null;
+  const value = Number(suffix);
+  return Number.isFinite(value) ? value : null;
+}
+
+function getNextSnStart(
+  prefix: string,
+  purchases: Purchase[],
+  devices: Device[],
+  excludePurchaseId?: number | null
+) {
+  const normalizedPrefix = String(prefix || '').trim();
+  if (!normalizedPrefix) return 1;
+
+  let maxEnd = 0;
+
+  purchases.forEach((p) => {
+    if (p.status === 0) return;
+    if (excludePurchaseId != null && p.id === excludePurchaseId) return;
+    if (String(p.snPrefix || '').trim() !== normalizedPrefix) return;
+    const start = p.snStart ?? 1;
+    const end = start + Number(p.totalItem || 0) - 1;
+    if (end > maxEnd) maxEnd = end;
+  });
+
+  devices.forEach((d) => {
+    const value = getSerialNumberValue(d.serialNumber || '', normalizedPrefix);
+    if (value != null && value > maxEnd) maxEnd = value;
+  });
+
+  return maxEnd + 1;
+}
+
 export const PurchaseRecord = () => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
@@ -239,6 +277,29 @@ export const PurchaseRecord = () => {
     if (!selectedModel) return;
 
     const englishDate = values.trnDate || todayEnglish();
+    const snPrefix = String(values.snPrefix || '').trim();
+    const snPadding = Number(values.snPadding);
+    const totalItem = Number(values.totalItem);
+    const snStart = getNextSnStart(snPrefix, purchases, devices, editingPurchase?.id ?? null);
+
+    const newSerials = Array.from({ length: totalItem }, (_, index) =>
+      generateSerialNumber(snPrefix, snPadding, snStart + index)
+    );
+    const taken = new Set<string>();
+    devices.forEach((d) => taken.add(d.serialNumber));
+    purchases.forEach((p) => {
+      if (p.status === 0) return;
+      if (editingPurchase && p.id === editingPurchase.id) return;
+      const pStart = p.snStart ?? 1;
+      for (let i = 0; i < p.totalItem; i += 1) {
+        taken.add(generateSerialNumber(p.snPrefix, p.snPadding, pStart + i));
+      }
+    });
+    const conflict = newSerials.find((serial) => taken.has(serial));
+    if (conflict) {
+      alert(`Serial number ${conflict} already exists. Please use a different SN prefix or padding.`);
+      return;
+    }
 
     if (editingPurchase) {
       setPurchases((prev) => {
@@ -252,9 +313,10 @@ export const PurchaseRecord = () => {
                 deviceModelId: selectedModel.id,
                 deviceModel: selectedModel.name,
                 make: companyMake,
-                snPrefix: values.snPrefix.trim(),
-                snPadding: Number(values.snPadding),
-                totalItem: Number(values.totalItem),
+                snPrefix,
+                snPadding,
+                snStart,
+                totalItem,
               }
             : p
         );
@@ -274,9 +336,10 @@ export const PurchaseRecord = () => {
           make: companyMake,
                 deviceModelId: selectedModel.id,
                 deviceModel: selectedModel.name,
-                snPrefix: values.snPrefix.trim(),
-                snPadding: Number(values.snPadding),
-                totalItem: Number(values.totalItem),
+                snPrefix,
+                snPadding,
+                snStart,
+                totalItem,
                 status: 2,
         };
         const newList = [newPurchase, ...prev];
@@ -310,7 +373,7 @@ export const PurchaseRecord = () => {
         (_, index) => ({
           id: Math.max(0, ...prev.map((d) => d.id)) + index + 1,
           purchaseMasterId: purchase.id,
-          serialNumber: generateSerialNumber(purchase.snPrefix, purchase.snPadding, index + 1),
+          serialNumber: generateSerialNumber(purchase.snPrefix, purchase.snPadding, (purchase.snStart ?? 1) + index),
           model: purchase.deviceModel,
           status: 'Available',
         })
@@ -549,7 +612,7 @@ export const PurchaseRecord = () => {
                     style={{ fontWeight: 600, color: '#172033' }}
                     title={`${record.snPadding} digits`}
                   >
-                    {text}-{String(1).padStart(record.snPadding, '0')}
+                    {text}-{String(record.snStart ?? 1).padStart(record.snPadding, '0')}
                   </Text>
                 ),
               },
@@ -650,49 +713,28 @@ export const PurchaseRecord = () => {
                     )}
 
                     {record.status === 1 && (
-                      <>
-                        <Button
-                          onClick={() => handleGenerateDevices(record)}
-                          icon={<RefreshCw size={14} />}
-                          style={{
-                            height: 32,
-                            borderRadius: 6,
-                            border: '1.5px solid #52c41a',
-                            background: '#52c41a',
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: 14,
-                            padding: '0 12px',
-                            boxShadow: '0 4px 8px rgba(82,196,26,0.2)',
-                            width: '100%',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          Generate Devices
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setDeleteTargetPurchase(record);
-                            setDeleteConfirmOpen(true);
-                          }}
-                          icon={<Trash2 size={14} />}
-                          style={{
-                            height: 32,
-                            borderRadius: 6,
-                            border: '1.5px solid #f5222d',
-                            background: '#f5222d',
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: 14,
-                            padding: '0 12px',
-                            boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-                            width: '100%',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </>
+                      <Button
+                        onClick={() => {
+                          setDeleteTargetPurchase(record);
+                          setDeleteConfirmOpen(true);
+                        }}
+                        icon={<Trash2 size={14} />}
+                        style={{
+                          height: 32,
+                          borderRadius: 6,
+                          border: '1.5px solid #f5222d',
+                          background: '#f5222d',
+                          color: '#fff',
+                          fontWeight: 600,
+                          fontSize: 14,
+                          padding: '0 12px',
+                          boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
+                          width: '100%',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        Delete
+                      </Button>
                     )}
                   </div>
                 ),
@@ -792,47 +834,23 @@ export const PurchaseRecord = () => {
                   </>
                 )}
                 {viewingPurchase.status === 1 && (
-                  <>
-                    <Button
-                      onClick={() => handleGenerateDevices(viewingPurchase)}
-                      icon={<RefreshCw size={14} />}
-                      style={{
-                        height: 32,
-                        borderRadius: 6,
-                        border: '1.5px solid #52c41a',
-                        background: '#52c41a',
-                        color: '#fff',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        padding: '0 16px',
-                        boxShadow: '0 4px 8px rgba(82,196,26,0.2)',
-                      }}
-                    >
-                      Generate Device
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setRejectFormDate(todayEnglish());
-                        setRejectFormBy('');
-                        setRejectFormReason('');
-                        setShowRejectForm((v) => !v);
-                      }}
-                      icon={<Trash2 size={14} />}
-                      style={{
-                        height: 32,
-                        borderRadius: 6,
-                        border: '1.5px solid #f5222d',
-                        background: '#f5222d',
-                        color: '#fff',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        padding: '0 16px',
-                        boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-                      }}
-                    >
-                      Reject
-                    </Button>
-                  </>
+                  <Button
+                    onClick={() => handleGenerateDevices(viewingPurchase)}
+                    icon={<RefreshCw size={14} />}
+                    style={{
+                      height: 32,
+                      borderRadius: 6,
+                      border: '1.5px solid #52c41a',
+                      background: '#52c41a',
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      padding: '0 16px',
+                      boxShadow: '0 4px 8px rgba(82,196,26,0.2)',
+                    }}
+                  >
+                    Generate Device
+                  </Button>
                 )}
               </div>
             </div>
@@ -851,7 +869,7 @@ export const PurchaseRecord = () => {
                 ],
                 [
                   'First Serial',
-                  generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, 1),
+                  generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, viewingPurchase.snStart ?? 1),
                 ],
                 ['Narration', viewingPurchase.narration || '—'],
               ].map(([label, value]) => (

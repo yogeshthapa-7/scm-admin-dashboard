@@ -20,14 +20,20 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
 
 export const router = createBrowserRouter([
   {
+    path: '/',
+    element: <Navigate to="/login" replace />,
+  },
+  {
     path: '/login',
     element: <LoginPage />,
   },
   {
-    path: '/',
-    element: <AuthLayout><DashboardLayout /></AuthLayout>,
+    element: (
+      <AuthLayout>
+        <DashboardLayout />
+      </AuthLayout>
+    ),
     children: [
-      { index: true, element: isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'device-status', element: <DeviceStatus /> },
       { path: 'device-modal', element: <DeviceModel /> },
@@ -36,5 +42,9 @@ export const router = createBrowserRouter([
       { path: 'purchase', element: <PurchaseRecord /> },
       { path: 'reports', element: <ReportsPage /> },
     ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/login" replace />,
   },
 ]);
