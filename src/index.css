@@ -26,6 +26,61 @@ body.dark-mode {
   font-size: 15px;
 }
 
+.login-page {
+  background:
+    radial-gradient(circle at 72% 30%, rgba(67, 133, 226, 0.34), transparent 32%),
+    linear-gradient(135deg, #061a3f 0%, #0c3472 48%, #183f7b 100%);
+}
+
+.login-background {
+  object-position: center;
+  filter: saturate(0.82) contrast(1.05);
+}
+
+.login-background-overlay {
+  background: transparent;
+}
+
+.login-card {
+  animation: loginCardEnter 0.55s ease-out both;
+}
+
+@keyframes loginCardEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1023px) {
+  .login-background-overlay {
+    background:
+      linear-gradient(180deg, rgba(5, 27, 68, 0.76), rgba(5, 27, 68, 0.92)),
+      linear-gradient(135deg, rgba(14, 101, 190, 0.35), rgba(4, 20, 54, 0.8));
+  }
+}
+
+@media (max-width: 767px) {
+  .login-page {
+    min-height: 100dvh;
+    background:
+      radial-gradient(circle at 50% 8%, rgba(71, 149, 239, 0.3), transparent 35%),
+      linear-gradient(160deg, #071b43 0%, #0c3472 58%, #102b5c 100%);
+  }
+
+  .login-background-overlay {
+    background:
+      linear-gradient(180deg, rgba(5, 25, 62, 0.8) 0%, rgba(5, 29, 72, 0.9) 48%, rgba(3, 17, 46, 0.96) 100%),
+      radial-gradient(circle at 50% 10%, rgba(50, 151, 239, 0.24), transparent 42%);
+  }
+
+  .login-card {
+    width: min(100%, 440px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    border-radius: 20px;
+    padding: 28px 20px;
+  }
+}
+
 /* Global font-size boost — overrides inline styles across ALL pages */
 body {
   font-size: 15px !important;
@@ -135,6 +190,74 @@ h1, h2, h3, h4, h5, h6,
   overflow: auto;
 }
 
+.mobile-menu-button {
+  display: none;
+}
+
+.sidebar-logo {
+  height: 170px;
+  width: 300px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.app-table-container,
+.app-table-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.app-table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 1024px) {
+  .desktop-sidebar {
+    display: none;
+  }
+
+  .mobile-menu-button {
+    display: inline-flex;
+  }
+
+  .content-area {
+    padding: 16px !important;
+    overflow-x: hidden;
+  }
+
+  .ant-layout-header {
+    height: 56px !important;
+    min-height: 56px;
+    padding: 0 12px !important;
+  }
+
+  .ant-layout-header .ant-space {
+    gap: 8px !important;
+  }
+
+  .ant-layout-header .ant-typography {
+    max-width: calc(100vw - 150px);
+    font-size: 14px !important;
+  }
+
+  .responsive-app-drawer .ant-drawer-content-wrapper {
+    width: min(100vw, 700px) !important;
+  }
+
+  .responsive-app-drawer .ant-drawer-body {
+    padding: 16px !important;
+  }
+
+  .responsive-app-drawer .ant-form-item {
+    margin-bottom: 10px;
+  }
+
+  .responsive-app-drawer .ant-form-item-control-input-content {
+    min-width: 0;
+  }
+}
+
 .content-area::before {
   content: "";
   position: fixed;
@@ -149,6 +272,13 @@ h1, h2, h3, h4, h5, h6,
   z-index: 0;
   transform: perspective(500px) rotateX(1deg);
   transform-origin: center top;
+}
+
+@media (max-width: 1024px) {
+  .content-area::before {
+    margin-left: 0;
+    margin-top: 56px;
+  }
 }
 
 .content-area > * {

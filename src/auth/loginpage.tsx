@@ -114,19 +114,18 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-hidden font-['Inter','Segoe_UI',sans-serif] relative flex">
+    <div className="login-page min-h-screen w-full overflow-hidden font-['Inter','Segoe_UI',sans-serif] relative flex">
       <img
         src={loginBackground}
         alt="Login Background"
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className="login-background absolute inset-0 z-0 hidden h-full w-full object-cover lg:block"
       />
+      <div className="login-background-overlay absolute inset-0 z-0" />
 
-      <div className="w-full md:w-[50%] hidden md:block items-center justify-end px-[40px] py-[20px]">
-        <div className="w-full max-w-[320px] text-right"></div>
-      </div>
+      <div className="login-brand-panel relative z-10 hidden w-1/2 lg:block" />
 
-      <div className="flex-1 h-screen overflow-y-auto flex items-center justify-center px-[40px] py-[20px] md:pl-[120px] md:pr-[40px] md:py-[40px] relative z-10">
-        <div className="w-full max-w-[420px] flex-col rounded-[24px] border-[1.5px] border-[#ffffff]/[0.4] bg-white/[0.9] shadow-[0_24px_48px_rgba(16,45,96,0.15)] backdrop-blur-sm px-[36px] py-[44px]">
+      <div className="relative z-10 flex h-screen flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:px-8 lg:px-12">
+        <div className="login-card w-full max-w-[440px] rounded-[24px] border border-white/70 bg-white/[0.94] px-5 py-8 shadow-[0_24px_80px_rgba(5,25,70,0.28)] backdrop-blur-xl sm:px-9 sm:py-10">
           <div className="mx-auto mb-8 flex h-[6px] w-[96px] overflow-hidden rounded-full bg-[#dbeafe]">
             <span className="w-[40%] bg-[#38bdf8]" />
             <span className="w-[40%] bg-[#168bff]" />
@@ -269,7 +268,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 [&_.ant-input::placeholder]:text-[#899bbd]
               "
             >
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-0 sm:grid-cols-2 sm:gap-3">
                 <Form.Item
                   name="firstName"
                   rules={[{ required: true, message: "Please enter first name" }]}

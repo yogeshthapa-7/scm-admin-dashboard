@@ -4,6 +4,8 @@ import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { CurtainTransition } from '@/shared/components/common/CurtainTransition';
 import { useTheme } from '@/context/ThemeContext';
+import { useState } from 'react';
+import { isAuthenticated } from '@/auth/services/auth-session';
 
 const { Content } = Layout;
 
@@ -11,20 +13,21 @@ export const DashboardLayout = () => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const isAuthenticated = localStorage.getItem('scm_auth') === 'true';
+  const authenticated = isAuthenticated();
 
-  if (!isAuthenticated) {
+  if (!authenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sidebar />
+      <Sidebar open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
       <Layout>
-        <Navbar />
+        <Navbar onMenuClick={() => setMobileMenuOpen(true)} />
         <Content
-          className={`content-area p-6 ${isDark ? 'dark' : ''}`}
+          className={`content-area ${isDark ? 'dark' : ''}`}
           style={{ transition: 'background 0.5s ease' }}
         >
           <Outlet />

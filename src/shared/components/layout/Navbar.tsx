@@ -1,16 +1,15 @@
-import { Layout, Avatar, Dropdown, Space, Typography, ConfigProvider } from 'antd';
-import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
+import { Layout, Avatar, Dropdown, Space, Typography, ConfigProvider, Button } from 'antd';
+import { ChevronDown, LogOut, Settings, User, Menu as MenuIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/shared/components/common/ThemeToggle';
 import { useTheme } from '@/context/ThemeContext';
 import { logout, getAuthUser } from '@/auth/services/login.service';
-// import { useState } from 'react';
 
 const { Header } = Layout;
 
 // const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
 
-export const Navbar = () => {
+export const Navbar = ({ onMenuClick }: { onMenuClick: () => void }) => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
   const navigate = useNavigate();
@@ -46,12 +45,22 @@ export const Navbar = () => {
           padding: '0 24px',
         }}
       >
-        <Typography.Text
-          style={{ color: isDark ? '#e8e8e8' : '#172033' }}
-          className="font-bold text-base"
-        >
-          {title}
-        </Typography.Text>
+        <div className="flex min-w-0 items-center gap-3">
+          <Button
+            type="text"
+            aria-label="Open navigation menu"
+            icon={<MenuIcon size={22} />}
+            onClick={onMenuClick}
+            className="mobile-menu-button shrink-0"
+            style={{ color: isDark ? '#e8e8e8' : '#172033' }}
+          />
+          <Typography.Text
+            style={{ color: isDark ? '#e8e8e8' : '#172033' }}
+            className="truncate font-bold text-base"
+          >
+            {title}
+          </Typography.Text>
+        </div>
 
         <Space size={16}>
           <ThemeToggle />

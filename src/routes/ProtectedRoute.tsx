@@ -1,5 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { isAuthenticated } from '@/auth/services/auth-session';
 
 export interface ProtectedRouteProps {
   children?: React.ReactNode;
@@ -13,9 +14,9 @@ export interface ProtectedRouteProps {
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
-  const isAuthenticated = localStorage.getItem('scm_auth') === 'true';
+  const authenticated = isAuthenticated();
 
-  if (!isAuthenticated) {
+  if (!authenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

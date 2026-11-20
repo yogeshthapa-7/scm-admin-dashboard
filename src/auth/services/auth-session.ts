@@ -1,11 +1,20 @@
 import type { AuthUser } from '../types/auth.types';
 
-export const AUTH_FLAG_KEY = 'scm_auth';
-export const ACCESS_TOKEN_KEY = 'scm_access_token';
-export const REFRESH_TOKEN_KEY = 'scm_refresh_token';
-export const ACCESS_TOKEN_EXPIRES_AT_KEY = 'scm_access_token_expires_at';
-export const REFRESH_TOKEN_EXPIRES_AT_KEY = 'scm_refresh_token_expires_at';
-export const USER_STORAGE_KEY = 'scm_user';
+export const AUTH_FLAG_KEY = 'auth_flag';
+export const ACCESS_TOKEN_KEY = 'access_token';
+export const REFRESH_TOKEN_KEY = 'refresh_token';
+export const ACCESS_TOKEN_EXPIRES_AT_KEY = 'access_token_expires_at';
+export const REFRESH_TOKEN_EXPIRES_AT_KEY = 'refresh_token_expires_at';
+export const USER_STORAGE_KEY = 'user';
+
+const LEGACY_AUTH_KEYS = [
+  'scm_auth',
+  'scm_access_token',
+  'scm_refresh_token',
+  'scm_access_token_expires_at',
+  'scm_refresh_token_expires_at',
+  'scm_user',
+];
 
 export interface AuthTokens {
   accessToken: string;
@@ -72,7 +81,10 @@ export function setAuthenticated(flag: boolean): void {
 
 export function isAuthenticated(): boolean {
   if (!isBrowser) return false;
-  return localStorage.getItem(AUTH_FLAG_KEY) === 'true';
+  const authenticated = localStorage.getItem(AUTH_FLAG_KEY) === 'true';
+  const hasAccessToken = Boolean(localStorage.getItem(ACCESS_TOKEN_KEY));
+  const hasRefreshToken = Boolean(localStorage.getItem(REFRESH_TOKEN_KEY));
+  return authenticated && (hasAccessToken || hasRefreshToken);
 }
 
 export function clearSession(): void {
@@ -84,9 +96,7 @@ export function clearSession(): void {
     ACCESS_TOKEN_EXPIRES_AT_KEY,
     REFRESH_TOKEN_EXPIRES_AT_KEY,
     USER_STORAGE_KEY,
-    // legacy / commented company keys cleanup
-    'access_token',
     'scm_company',
   ];
-  keys.forEach((k) => localStorage.removeItem(k));
+  [...keys, ...LEGACY_AUTH_KEYS].forEach((k) => localStorage.removeItem(k));
 }

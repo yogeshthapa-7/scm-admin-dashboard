@@ -54,7 +54,8 @@ export const AppDrawer = ({
       title={title}
       open={open}
       onClose={onClose}
-      width={typeof width === 'number' ? width : 700}
+      width={width}
+      rootClassName="responsive-app-drawer"
       bodyStyle={{ paddingBottom: 0 }}
       drawerStyle={{ paddingBottom: 24 }}
     >

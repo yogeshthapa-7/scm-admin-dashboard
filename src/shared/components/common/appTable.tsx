@@ -40,7 +40,7 @@ export const AppTable = <RecordType = any>({
   }));
 
   return (
-    <div className={className}>
+    <div className={`app-table-container ${className ?? ''}`}>
       {title && (
         <div className="mb-4">
           <Title level={4} style={{ marginBottom: 16 }}>
@@ -48,19 +48,22 @@ export const AppTable = <RecordType = any>({
           </Title>
         </div>
       )}
-      <Table
-        columns={centeredColumns}
-        dataSource={dataSource}
-        rowKey={rowKey}
-        size={size}
-        pagination={pagination}
-        loading={loading}
-        bordered={bordered}
-        locale={{
-          emptyText: <Empty description={emptyDescription} />,
-        }}
-        {...rest}
-      />
+      <div className="app-table-scroll">
+        <Table
+          columns={centeredColumns}
+          dataSource={dataSource}
+          rowKey={rowKey}
+          size={size}
+          pagination={pagination}
+          loading={loading}
+          bordered={bordered}
+          scroll={{ x: 'max-content', ...rest.scroll }}
+          locale={{
+            emptyText: <Empty description={emptyDescription} />,
+          }}
+          {...rest}
+        />
+      </div>
       {serverPagination && <AppPagination {...serverPagination} />}
     </div>
   );

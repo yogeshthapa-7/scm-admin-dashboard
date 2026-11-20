@@ -1,4 +1,4 @@
-import { Layout, Menu, ConfigProvider } from 'antd';
+import { Layout, Menu, ConfigProvider, Drawer } from 'antd';
 import {
   LayoutDashboard,
   Building2,
@@ -9,6 +9,7 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 // import { useState } from 'react';
 import scmLogo from '@/assets/images/scm_logo_1.png';
@@ -43,7 +44,12 @@ const menuItems = [
   { key: '/reports', icon: <BarChart3 size={20} />, label: 'Report' },
 ];
 
-export const Sidebar = () => {
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export const Sidebar = ({ open, onClose }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { mode } = useTheme();
@@ -67,19 +73,51 @@ export const Sidebar = () => {
       .find((k) => typeof k === 'string' && location.pathname.startsWith(k)) ??
     '/dashboard';
 
-  return (
-    <Sider
-      width={290}
-      style={{
-        background: isDark
-          ? 'linear-gradient(180deg, #0a0a1e 0%, #14142e 50%, #1a1a3e 100%)'
-          : 'linear-gradient(180deg, #0d3b7a 0%, #1a4d8f 50%, #2563a8 100%)',
-        borderRight: isDark ? '1px solid #2a2a4a' : '1px solid #d0d7e2',
-        transition: 'background 0.5s ease',
+  const navigation = (
+    <ConfigProvider
+      theme={{
+        components: {
+          Menu: {
+            darkItemBg: 'transparent',
+            darkSubMenuItemBg: 'transparent',
+            darkPopupBg: isDark ? '#1a1a3e' : '#1a4d8f',
+            darkItemColor: 'rgba(255, 255, 255, 0.9)',
+            darkItemHoverBg: 'rgba(255, 255, 255, 0.15)',
+            darkItemHoverColor: '#ffffff',
+            darkItemSelectedBg: 'rgba(255, 255, 255, 0.25)',
+            darkItemSelectedColor: '#ffffff',
+            itemBorderRadius: 8,
+            itemMarginInline: 12,
+            itemHeight: 50,
+            fontSize: 16,
+            itemSelectedBg: 'rgba(255, 255, 255, 0.25)',
+            itemSelectedColor: '#ffffff',
+          },
+        },
       }}
     >
+      <Menu
+        mode="inline"
+        selectedKeys={[selectedKey]}
+        items={menuItems}
+        onClick={({ key }) => {
+          navigate(key);
+          onClose();
+        }}
+        theme="dark"
+        style={{ border: 'none', paddingTop: 12 }}
+      />
+    </ConfigProvider>
+  );
+
+  useEffect(() => {
+    onClose();
+  }, [location.pathname]);
+
+  const sidebarContent = (
+    <div className="sidebar-content">
       <div style={{ paddingTop: 0, paddingBottom: 8, textAlign: 'center' }}>
-        <img src={companyLogo} alt="SCM" style={{ height: 170, width: 300, objectFit: 'contain' }} />
+        <img src={companyLogo} alt="SCM" className="sidebar-logo" />
       </div>
       <div
         style={{
@@ -88,38 +126,37 @@ export const Sidebar = () => {
           transition: 'border-color 0.5s ease',
         }}
       />
-      <ConfigProvider
-        theme={{
-          components: {
-            Menu: {
-              darkItemBg: 'transparent',
-              darkSubMenuItemBg: 'transparent',
-              darkPopupBg: isDark ? '#1a1a3e' : '#1a4d8f',
-              darkItemColor: 'rgba(255, 255, 255, 0.9)',
-              darkItemHoverBg: 'rgba(255, 255, 255, 0.15)',
-              darkItemHoverColor: '#ffffff',
-              darkItemSelectedBg: 'rgba(255, 255, 255, 0.25)',
-              darkItemSelectedColor: '#ffffff',
-              itemBorderRadius: 8,
-              itemMarginInline: 12,
-              itemHeight: 50,
-              fontSize: 16,
-              itemSelectedBg: 'rgba(255, 255, 255, 0.25)',
-              itemSelectedColor: '#ffffff',
-            },
-          },
-        }}
+      {navigation}
+    </div>
+  );
+
+  return (
+    <>
+      <Sider
+        className="desktop-sidebar"
+        width={290}
+        style={{
+        background: isDark
+          ? 'linear-gradient(180deg, #0a0a1e 0%, #14142e 50%, #1a1a3e 100%)'
+          : 'linear-gradient(180deg, #0d3b7a 0%, #1a4d8f 50%, #2563a8 100%)',
+        borderRight: isDark ? '1px solid #2a2a4a' : '1px solid #d0d7e2',
+        transition: 'background 0.5s ease',
+      }}
       >
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-          theme="dark"
-          style={{ border: 'none', paddingTop: 12 }}
-        />
-      </ConfigProvider>
-    </Sider>
+        {sidebarContent}
+      </Sider>
+      <Drawer
+        className="mobile-sidebar-drawer"
+        placement="left"
+        open={open}
+        onClose={onClose}
+        closable={false}
+        width={290}
+        styles={{ body: { padding: 0, background: isDark ? '#14142e' : '#1a4d8f' } }}
+      >
+        {sidebarContent}
+      </Drawer>
+    </>
   );
 };
 
