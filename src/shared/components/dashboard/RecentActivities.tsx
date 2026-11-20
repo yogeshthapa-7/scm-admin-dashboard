@@ -1,4 +1,4 @@
-import { List, Typography } from 'antd';
+﻿import { List, Typography } from 'antd';
 
 const activities = [
   { id: 1, text: 'Device #DEV-1024 added to inventory', time: '2 min ago' },
@@ -16,13 +16,11 @@ export const RecentActivities = () => {
       renderItem={(item) => (
         <List.Item>
           <List.Item.Meta
-            title={<Typography.Text style={{ color: '#172033', fontSize: 14 }}>{item.text}</Typography.Text>}
-            description={<Typography.Text style={{ color: '#172033', fontSize: 12 }}>{item.time}</Typography.Text>}
+            title={<Typography.Text>{item.text}</Typography.Text>}
+            description={<Typography.Text type="secondary" style={{ fontSize: 12 }}>{item.time}</Typography.Text>}
           />
         </List.Item>
       )}
     />
   );
 };
-
-

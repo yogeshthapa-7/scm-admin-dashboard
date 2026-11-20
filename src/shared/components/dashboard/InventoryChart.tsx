@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
-import { Card, Empty, Typography } from 'antd';
+﻿import { useEffect, useRef } from 'react';
+import { Card, Empty, Typography, theme } from 'antd';
 import Highcharts from 'highcharts';
 import type { InventoryChartPoint } from '@/mock-data';
+import { useTheme } from '@/context/ThemeContext';
 
 const { Text } = Typography;
 
@@ -16,6 +17,9 @@ export const InventoryChart = ({
   description,
   data,
 }: InventoryChartProps) => {
+  const { mode } = useTheme();
+  const { token } = theme.useToken();
+  const isDark = mode === 'dark';
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<Highcharts.Chart | null>(null);
 
@@ -23,6 +27,8 @@ export const InventoryChart = ({
     if (!containerRef.current || !data || data.length === 0) return;
 
     const points = data;
+    const textColor = token.colorText;
+    const gridColor = isDark ? '#333' : '#e6e6e6';
     const options: Highcharts.Options = {
       chart: {
         type: 'line',
@@ -33,13 +39,32 @@ export const InventoryChart = ({
       xAxis: {
         categories: points.map((point) => point.month),
         crosshair: true,
+        labels: { style: { color: textColor } },
+        lineColor: gridColor,
+        tickColor: gridColor,
       },
       yAxis: [
-        { title: { text: 'Received / Issued' }, min: 0 },
-        { title: { text: 'Available' }, opposite: true, min: 0 },
+        {
+          title: { text: 'Received / Issued', style: { color: textColor } },
+          labels: { style: { color: textColor } },
+          gridLineColor: gridColor,
+          min: 0,
+        },
+        {
+          title: { text: 'Available', style: { color: textColor } },
+          labels: { style: { color: textColor } },
+          opposite: true,
+          gridLineColor: gridColor,
+          min: 0,
+        },
       ],
       tooltip: { shared: true },
-      legend: { align: 'center', verticalAlign: 'bottom' },
+      legend: {
+        align: 'center',
+        verticalAlign: 'bottom',
+        itemStyle: { color: textColor },
+        itemHoverStyle: { color: textColor },
+      },
       plotOptions: { line: { marker: { enabled: true }, lineWidth: 2 } },
       series: [
         { type: 'line', name: 'Received', data: points.map((p) => p.received), color: '#1677ff' },
@@ -55,7 +80,7 @@ export const InventoryChart = ({
       chartRef.current?.destroy();
       chartRef.current = null;
     };
-  }, [data]);
+  }, [data, isDark, token.colorText]);
 
   if (!data || data.length === 0) {
     return (
@@ -74,11 +99,10 @@ export const InventoryChart = ({
     >
       <div ref={containerRef} style={{ flex: 1, minHeight: 360 }} />
       {description && (
-        <Text style={{ color: '#172033', fontSize: 13, marginTop: 8 }}>
+        <Text type="secondary" style={{ fontSize: 13, marginTop: 8, display: 'block' }}>
           {description}
         </Text>
       )}
     </Card>
   );
 };
-

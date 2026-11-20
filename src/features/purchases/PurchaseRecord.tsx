@@ -8,6 +8,7 @@ import {
   Input,
   Select,
   Form,
+  theme,
 } from 'antd';
 import {
   Search,
@@ -219,6 +220,7 @@ function getNextSnStart(
 
 export const PurchaseRecord = () => {
   const { mode } = useTheme();
+  const { token } = theme.useToken();
   const isDark = mode === 'dark';
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -537,7 +539,7 @@ export const PurchaseRecord = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div>
       {/* Header banner */}
       <Card
         style={{
@@ -644,7 +646,7 @@ export const PurchaseRecord = () => {
               key: 'trnDate',
               width: 120,
               render: (text: string) => (
-                <Text style={{ color: '#666' }}>{formatDisplayDate(text)}</Text>
+                <Text style={{ color: token.colorTextSecondary }}>{formatDisplayDate(text)}</Text>
               ),
             },
             {
@@ -653,7 +655,7 @@ export const PurchaseRecord = () => {
               key: 'make',
               width: 140,
               render: (text: string) => (
-                <Text style={{ fontWeight: 600, color: '#172033' }}>{text}</Text>
+                <Text style={{ fontWeight: 600, color: token.colorText }}>{text}</Text>
               ),
             },
             {
@@ -662,7 +664,7 @@ export const PurchaseRecord = () => {
               key: 'deviceModel',
               width: 160,
               render: (text: string) => (
-                <Text style={{ color: '#666' }}>{text}</Text>
+                <Text style={{ color: token.colorTextSecondary }}>{text}</Text>
               ),
             },
             {
@@ -672,7 +674,7 @@ export const PurchaseRecord = () => {
               width: 140,
               render: (text: string, record: Purchase) => (
                 <Text
-                  style={{ fontWeight: 600, color: '#172033' }}
+                  style={{ fontWeight: 600, color: token.colorText }}
                   title={`${record.snPadding} digits`}
                 >
                   {text}-{String(record.snStart ?? 1).padStart(record.snPadding, '0')}
@@ -685,7 +687,7 @@ export const PurchaseRecord = () => {
               key: 'totalItem',
               width: 100,
               render: (text: number) => (
-                <Text style={{ fontWeight: 600, color: '#172033' }}>{text}</Text>
+                <Text style={{ fontWeight: 600, color: token.colorText }}>{text}</Text>
               ),
             },
             {

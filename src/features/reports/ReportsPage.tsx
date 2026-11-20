@@ -1,5 +1,5 @@
-import { useEffect, useRef, useMemo } from 'react';
-import { Card, Typography, Row, Col } from 'antd';
+﻿import { useEffect, useRef, useMemo } from 'react';
+import { Card, Typography, Row, Col, theme } from 'antd';
 import Highcharts from 'highcharts';
 type HighchartsOptions = Highcharts.Options;
 import { InventoryChart } from '@/shared/components/dashboard/InventoryChart';
@@ -34,21 +34,33 @@ const createChart = (
   return () => chart.destroy();
 };
 
-const StatusChart = () => {
+const StatusChart = ({ isDark }: { isDark: boolean }) => {
+  const { token } = theme.useToken();
   const ref = useRef<HTMLDivElement>(null);
+  const textColor = token.colorText;
+
   const options = useMemo<HighchartsOptions>(
     () => ({
-      chart: { type: 'pie' },
+      chart: { type: 'pie', backgroundColor: 'transparent' },
       title: { text: undefined },
       plotOptions: {
         pie: {
           innerRadius: '55%',
           allowPointSelect: true,
-          dataLabels: { enabled: true, format: '{point.name}: {point.y} ({point.percentage:.1f}%)' },
+          dataLabels: {
+            enabled: true,
+            format: '{point.name}: {point.y} ({point.percentage:.1f}%)',
+            style: { color: textColor, textOutline: 'none' },
+          },
         },
       },
       tooltip: { pointFormat: '{point.name}: {point.y} devices ({point.percentage:.1f}%)' },
-      legend: { align: 'center', verticalAlign: 'bottom' },
+      legend: {
+        align: 'center',
+        verticalAlign: 'bottom',
+        itemStyle: { color: textColor },
+        itemHoverStyle: { color: textColor },
+      },
       series: [
         {
           type: 'pie',
@@ -62,21 +74,34 @@ const StatusChart = () => {
       ],
       credits: { enabled: false },
     }),
-    []
+    [isDark, textColor]
   );
 
   useEffect(() => createChart(ref, options), [options]);
   return <div ref={ref} style={{ width: '100%', height: 340 }} />;
 };
 
-const DepartmentChart = () => {
+const DepartmentChart = ({ isDark }: { isDark: boolean }) => {
+  const { token } = theme.useToken();
   const ref = useRef<HTMLDivElement>(null);
+  const textColor = token.colorText;
+  const gridColor = isDark ? '#333' : '#e6e6e6';
+
   const options = useMemo<HighchartsOptions>(
     () => ({
-      chart: { type: 'column' },
+      chart: { type: 'column', backgroundColor: 'transparent' },
       title: { text: undefined },
-      xAxis: { categories: reportSummary.devicesByDepartment.map((d) => d.department) },
-      yAxis: { title: { text: 'Devices' } },
+      xAxis: {
+        categories: reportSummary.devicesByDepartment.map((d) => d.department),
+        labels: { style: { color: textColor } },
+        lineColor: gridColor,
+        tickColor: gridColor,
+      },
+      yAxis: {
+        title: { text: 'Devices', style: { color: textColor } },
+        labels: { style: { color: textColor } },
+        gridLineColor: gridColor,
+      },
       tooltip: { valueSuffix: ' devices' },
       legend: { enabled: false },
       series: [
@@ -89,21 +114,34 @@ const DepartmentChart = () => {
       ],
       credits: { enabled: false },
     }),
-    []
+    [isDark, textColor, gridColor]
   );
 
   useEffect(() => createChart(ref, options), [options]);
   return <div ref={ref} style={{ width: '100%', height: 340 }} />;
 };
 
-const BrandChart = () => {
+const BrandChart = ({ isDark }: { isDark: boolean }) => {
+  const { token } = theme.useToken();
   const ref = useRef<HTMLDivElement>(null);
+  const textColor = token.colorText;
+  const gridColor = isDark ? '#333' : '#e6e6e6';
+
   const options = useMemo<HighchartsOptions>(
     () => ({
-      chart: { type: 'column' },
+      chart: { type: 'column', backgroundColor: 'transparent' },
       title: { text: undefined },
-      xAxis: { categories: reportSummary.devicesByBrand.map((b) => b.brand) },
-      yAxis: { title: { text: 'Devices' } },
+      xAxis: {
+        categories: reportSummary.devicesByBrand.map((b) => b.brand),
+        labels: { style: { color: textColor } },
+        lineColor: gridColor,
+        tickColor: gridColor,
+      },
+      yAxis: {
+        title: { text: 'Devices', style: { color: textColor } },
+        labels: { style: { color: textColor } },
+        gridLineColor: gridColor,
+      },
       tooltip: { valueSuffix: ' devices' },
       legend: { enabled: false },
       series: [
@@ -116,7 +154,7 @@ const BrandChart = () => {
       ],
       credits: { enabled: false },
     }),
-    []
+    [isDark, textColor, gridColor]
   );
 
   useEffect(() => createChart(ref, options), [options]);
@@ -170,7 +208,7 @@ const ChartCard = ({
     title={title}
   >
     <div style={{ flex: 1, minHeight: 360 }}>{children}</div>
-    <Text style={{ color: '#172033', fontSize: 16, marginTop: 8 }}>
+    <Text type="secondary" style={{ fontSize: 16, marginTop: 8, display: 'block' }}>
       {description}
     </Text>
   </Card>
@@ -181,7 +219,7 @@ export const ReportsPage = () => {
   const isDark = mode === 'dark';
 
   return (
-    <div className="px-4 py-6">
+    <div>
       {/* Header banner - matches DeviceInventory/PurchaseMaster pattern */}
       <Card
         style={{
@@ -247,12 +285,12 @@ export const ReportsPage = () => {
                   <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1, color: card.color }}>
                     {card.value}
                   </div>
-                  <Text style={{ color: '#172033', fontSize: 16 }}>
+                  <Text type="secondary" style={{ fontSize: 16 }}>
                     {card.label}
                   </Text>
                 </div>
               </div>
-              <Text style={{ color: '#172033', fontSize: 17, lineHeight: 1.5 }}>
+              <Text type="secondary" style={{ fontSize: 17, lineHeight: 1.5 }}>
                 {card.description}
               </Text>
             </Card>
@@ -267,7 +305,7 @@ export const ReportsPage = () => {
             title="Devices by Status"
             description="Distribution of devices across 5 status categories (donut chart). Inner radius 55% for donut style."
           >
-            <StatusChart />
+            <StatusChart isDark={isDark} />
           </ChartCard>
         </Col>
         <Col xs={24} lg={12}>
@@ -275,7 +313,7 @@ export const ReportsPage = () => {
             title="Devices by Department"
             description="Device count per department across 6 departments. Helps identify resource allocation."
           >
-            <DepartmentChart />
+            <DepartmentChart isDark={isDark} />
           </ChartCard>
         </Col>
       </Row>
@@ -286,7 +324,7 @@ export const ReportsPage = () => {
             title="Devices by Brand"
             description="Brand-wise device distribution across 6 vendors. Useful for vendor relationship analysis."
           >
-            <BrandChart />
+            <BrandChart isDark={isDark} />
           </ChartCard>
         </Col>
         <Col xs={24} lg={12}>
@@ -300,4 +338,3 @@ export const ReportsPage = () => {
     </div>
   );
 };
-

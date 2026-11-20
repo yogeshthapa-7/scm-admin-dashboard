@@ -1,5 +1,5 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
-import { Typography, Row, Col, Card, Tag, Avatar } from 'antd';
+﻿import { useEffect, useRef, useMemo, useState } from 'react';
+import { Typography, Row, Col, Card, Tag, Avatar, theme } from 'antd';
 import Highcharts from 'highcharts';
 import { Monitor, ShoppingCart, Building2, Users, Package } from 'lucide-react';
 import { InventoryChart } from '@/shared/components/dashboard/InventoryChart';
@@ -23,19 +23,33 @@ const createChart = (
   return () => chart.destroy();
 };
 
-const StatusChart = ({ description }: { description?: string }) => {
+const StatusChart = ({ description, isDark }: { description?: string; isDark: boolean }) => {
+  const { token } = theme.useToken();
   const ref = useRef<HTMLDivElement>(null);
   const statusColors = ['#1677ff', '#52c41a', '#faad14', '#f5222d', '#722ed1'];
   const statusData = Object.entries(reportSummary.devicesByStatus).map(
     ([status, count]) => ({ name: status, value: count })
   );
 
+  const axisColor = token.colorText;
+  const gridColor = isDark ? '#333' : '#e6e6e6';
+
   const options = useMemo<HighchartsOptions>(
     () => ({
-      chart: { type: 'column', height: 280 },
+      chart: { type: 'column', height: 280, backgroundColor: 'transparent' },
       title: { text: undefined },
-      xAxis: { categories: statusData.map((s) => s.name) },
-      yAxis: { title: { text: 'Devices' }, min: 0 },
+      xAxis: {
+        categories: statusData.map((s) => s.name),
+        labels: { style: { color: axisColor } },
+        lineColor: gridColor,
+        tickColor: gridColor,
+      },
+      yAxis: {
+        title: { text: 'Devices', style: { color: axisColor } },
+        labels: { style: { color: axisColor } },
+        gridLineColor: gridColor,
+        min: 0,
+      },
       tooltip: { valueSuffix: ' devices' },
       legend: { enabled: false },
       series: [
@@ -47,7 +61,7 @@ const StatusChart = ({ description }: { description?: string }) => {
       ],
       credits: { enabled: false },
     }),
-    []
+    [axisColor, gridColor]
   );
 
   useEffect(() => createChart(ref, options), [options]);
@@ -55,7 +69,7 @@ const StatusChart = ({ description }: { description?: string }) => {
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div ref={ref} style={{ flex: 1 }} />
       {description && (
-        <Text style={{ color: '#172033', fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
+        <Text type="secondary" style={{ fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
           {description}
         </Text>
       )}
@@ -63,15 +77,29 @@ const StatusChart = ({ description }: { description?: string }) => {
   );
 };
 
-const BrandChart = ({ description }: { description?: string }) => {
+const BrandChart = ({ description, isDark }: { description?: string; isDark: boolean }) => {
+  const { token } = theme.useToken();
   const ref = useRef<HTMLDivElement>(null);
+
+  const axisColor = token.colorText;
+  const gridColor = isDark ? '#333' : '#e6e6e6';
 
   const options = useMemo<HighchartsOptions>(
     () => ({
-      chart: { type: 'column', height: 280 },
+      chart: { type: 'column', height: 280, backgroundColor: 'transparent' },
       title: { text: undefined },
-      xAxis: { categories: reportSummary.devicesByBrand.map((b) => b.brand) },
-      yAxis: { title: { text: 'Devices' }, min: 0 },
+      xAxis: {
+        categories: reportSummary.devicesByBrand.map((b) => b.brand),
+        labels: { style: { color: axisColor } },
+        lineColor: gridColor,
+        tickColor: gridColor,
+      },
+      yAxis: {
+        title: { text: 'Devices', style: { color: axisColor } },
+        labels: { style: { color: axisColor } },
+        gridLineColor: gridColor,
+        min: 0,
+      },
       tooltip: { valueSuffix: ' devices' },
       legend: { enabled: false },
       series: [
@@ -84,7 +112,7 @@ const BrandChart = ({ description }: { description?: string }) => {
       ],
       credits: { enabled: false },
     }),
-    []
+    [axisColor, gridColor]
   );
 
   useEffect(() => createChart(ref, options), [options]);
@@ -92,7 +120,7 @@ const BrandChart = ({ description }: { description?: string }) => {
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div ref={ref} style={{ flex: 1 }} />
       {description && (
-        <Text style={{ color: '#172033', fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
+        <Text type="secondary" style={{ fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
           {description}
         </Text>
       )}
@@ -150,64 +178,12 @@ const statusColorMap: Record<string, string> = {
 
 const dashboardUsers = users.slice(0, 4);
 
-const userColumns = [
-  {
-    title: 'User',
-    dataIndex: 'name',
-    key: 'name',
-    width: 150,
-    render: (text: string, record: { id: string; email: string; role: string }) => (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Avatar
-          size={24}
-          style={{
-            background: `${roleColorHex[record.role]}15`,
-            color: roleColorHex[record.role],
-          }}
-        >
-          {text.charAt(0).toUpperCase()}
-        </Avatar>
-        <div>
-          <Text strong style={{ fontSize: 13 }}>{text}</Text>
-          <br />
-          <Text style={{ fontSize: 11, color: '#172033' }}>
-            {record.email}
-          </Text>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: 'Role',
-    dataIndex: 'role',
-    key: 'role',
-    width: 110,
-    render: (role: string) => <Tag color={roleColorHex[role] || 'default'}>{role}</Tag>,
-  },
-  {
-    title: 'Department',
-    dataIndex: 'department',
-    key: 'department',
-    width: 140,
-    render: (dept: string) => <Tag color="blue">{dept}</Tag>,
-  },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
-    width: 110,
-    render: (status: string) => (
-      <Tag color={statusColorMap[status] || 'default'}>{status}</Tag>
-    ),
-  },
-];
-
 export const DashboardPage = () => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
 
   const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
-  const savedCompany = localStorage.getItem("scm_company") || import.meta.env.VITE_DEFAULT_COMPANY || 'scm';
+  const savedCompany = localStorage.getItem('scm_company') || import.meta.env.VITE_DEFAULT_COMPANY || 'scm';
   const [companyId] = useState<string>(savedCompany);
   const company = COMPANIES.find((c: any) => c.id === companyId) || COMPANIES[0];
 
@@ -231,8 +207,63 @@ export const DashboardPage = () => {
     day: 'numeric',
   });
 
+  const userColumns = useMemo(
+    () => [
+      {
+        title: 'User',
+        dataIndex: 'name',
+        key: 'name',
+        width: 150,
+        render: (text: string, record: { id: string; email: string; role: string }) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Avatar
+              size={24}
+              style={{
+                background: `${roleColorHex[record.role]}15`,
+                color: roleColorHex[record.role],
+              }}
+            >
+              {text.charAt(0).toUpperCase()}
+            </Avatar>
+            <div>
+              <Text strong style={{ fontSize: 13 }}>{text}</Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {record.email}
+              </Text>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: 'Role',
+        dataIndex: 'role',
+        key: 'role',
+        width: 110,
+        render: (role: string) => <Tag color={roleColorHex[role] || 'default'}>{role}</Tag>,
+      },
+      {
+        title: 'Department',
+        dataIndex: 'department',
+        key: 'department',
+        width: 140,
+        render: (dept: string) => <Tag color="blue">{dept}</Tag>,
+      },
+      {
+        title: 'Status',
+        dataIndex: 'status',
+        key: 'status',
+        width: 110,
+        render: (status: string) => (
+          <Tag color={statusColorMap[status] || 'default'}>{status}</Tag>
+        ),
+      },
+    ],
+    []
+  );
+
   return (
-    <div className="px-4 py-6">
+    <div>
       {/* Header banner */}
       <Card
         style={{
@@ -297,11 +328,11 @@ export const DashboardPage = () => {
                 >
                   {card.icon}
                 </div>
-                  <div style={{ textAlign: 'right' }}>
+                <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1, color: card.color }}>
                     {card.value}
                   </div>
-                  <Text style={{ fontSize: 12, color: '#172033' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
                     {card.label}
                   </Text>
                 </div>
@@ -316,7 +347,7 @@ export const DashboardPage = () => {
         <Col xs={24} lg={12}>
           <Card
             title="Inventory Overview"
-            extra={<Text style={{ color: '#172033' }}>6-month trend</Text>}
+            extra={<Text type="secondary">6-month trend</Text>}
             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
           >
             <div style={{ flex: 1, minHeight: 420 }}>
@@ -344,7 +375,7 @@ export const DashboardPage = () => {
         <Col xs={24} lg={12}>
           <Card
             title="Users"
-            extra={<Text style={{ color: '#172033' }}>Recent registered users</Text>}
+            extra={<Text type="secondary">Recent registered users</Text>}
             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
           >
             <div style={{ flex: 1, minHeight: 420 }}>
@@ -362,11 +393,12 @@ export const DashboardPage = () => {
         <Col xs={24} lg={12}>
           <Card
             title="Devices by Status"
-            extra={<Text style={{ color: '#172033' }}>Distribution across 5 status categories</Text>}
+            extra={<Text type="secondary">Distribution across 5 status categories</Text>}
             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
           >
             <div style={{ flex: 1, minHeight: 420 }}>
               <StatusChart
+                isDark={isDark}
                 description="This column chart breaks down all devices by their current status across five categories: Active, In-Stock, Assigned, Under-Repair, and Retired. It helps you quickly see how many devices are in use versus sitting idle or needing service."
               />
             </div>
@@ -379,11 +411,12 @@ export const DashboardPage = () => {
         <Col xs={24}>
           <Card
             title="Devices by Brand"
-            extra={<Text style={{ color: '#172033' }}>Brand-wise distribution across 6 vendors</Text>}
+            extra={<Text type="secondary">Brand-wise distribution across 6 vendors</Text>}
             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
           >
             <div style={{ flex: 1, minHeight: 360 }}>
               <BrandChart
+                isDark={isDark}
                 description="This column chart shows which device brands dominate your inventory. Dell leads with the most units, followed by HP and Lenovo. Use this data to evaluate vendor coverage and plan future purchases based on brand availability."
               />
             </div>
@@ -393,5 +426,3 @@ export const DashboardPage = () => {
     </div>
   );
 };
-
-

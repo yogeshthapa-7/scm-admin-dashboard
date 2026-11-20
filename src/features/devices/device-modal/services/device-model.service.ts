@@ -18,32 +18,12 @@ export const DELETE_URL = `${RESOURCE_PATH}/DeleteDeviceModel`;
 
 const STORAGE_KEY = 'device_models';
 
-const DEFAULT_DEVICE_MODELS: DeviceModelItem[] = [
-  { id: 'MDL-001', name: 'MacBook Pro 16" M3 Max' },
-  { id: 'MDL-002', name: 'Dell XPS 15 9530' },
-  { id: 'MDL-003', name: 'Lenovo ThinkPad X1 Carbon Gen 11' },
-  { id: 'MDL-004', name: 'HP EliteBook 840 G10' },
-  { id: 'MDL-005', name: 'Apple iPad Pro 12.9" M2' },
-  { id: 'MDL-006', name: 'Samsung Galaxy Tab S9 Ultra' },
-  { id: 'MDL-007', name: 'Cisco Catalyst 9300 Switch' },
-  { id: 'MDL-008', name: 'Fortinet FortiGate 60F Firewall' },
-  { id: 'MDL-009', name: 'Ubiquiti UniFi U6 Enterprise AP' },
-  { id: 'MDL-010', name: 'Dell UltraSharp 27" 4K Monitor' },
-  { id: 'MDL-011', name: 'Logitech MX Master 3S Mouse' },
-  { id: 'MDL-012', name: 'Apple Magic Keyboard' },
-  { id: 'MDL-013', name: 'Zebra TC26 Handheld Computer' },
-  { id: 'MDL-014', name: 'Honeywell Voyager 1400g Scanner' },
-  { id: 'MDL-015', name: 'Epson WorkForce Enterprise Printer' },
-];
-
 function getStoredDeviceModels(): DeviceModelItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DEVICE_MODELS));
-    return DEFAULT_DEVICE_MODELS;
+    return raw ? JSON.parse(raw) : [];
   } catch {
-    return DEFAULT_DEVICE_MODELS;
+    return [];
   }
 }
 

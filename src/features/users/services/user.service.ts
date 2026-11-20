@@ -17,33 +17,12 @@ export const DELETE_URL = `${RESOURCE_PATH}/Delete`;
 
 const STORAGE_KEY = 'scm_users';
 
-const DEFAULT_USERS: UserItem[] = [
-  { id: 'USR-001', name: 'System Administrator', email: 'admin@scm.gov', role: 'Admin', department: 'IT', status: 'Active', lastLogin: '2026-11-16 09:30', createdAt: '2020-01-01' },
-  { id: 'USR-002', name: 'IT Manager', email: 'it.manager@scm.gov', role: 'Manager', department: 'IT', status: 'Active', lastLogin: '2026-11-16 08:15', createdAt: '2020-03-15' },
-  { id: 'USR-003', name: 'Amit Sharma', email: 'amit.s@scm.gov', role: 'Officer', department: 'IT', status: 'Active', lastLogin: '2026-11-15 17:00', createdAt: '2021-06-10' },
-  { id: 'USR-004', name: 'Priya Nair', email: 'priya.n@scm.gov', role: 'Officer', department: 'Finance', status: 'Active', lastLogin: '2026-11-15 16:45', createdAt: '2021-09-20' },
-  { id: 'USR-005', name: 'Rajesh Kumar', email: 'rajesh.k@scm.gov', role: 'Officer', department: 'Field Operations', status: 'Active', lastLogin: '2026-11-16 07:50', createdAt: '2022-01-10' },
-  { id: 'USR-006', name: 'Sita Gurung', email: 'sita.g@scm.gov', role: 'Viewer', department: 'Admin', status: 'Active', lastLogin: '2026-11-14 15:30', createdAt: '2022-04-05' },
-  { id: 'USR-007', name: 'Bikash Rai', email: 'bikash.r@scm.gov', role: 'Manager', department: 'Procurement', status: 'Active', lastLogin: '2026-11-16 09:00', createdAt: '2021-11-15' },
-  { id: 'USR-008', name: 'Hari Sharma', email: 'hari.s@scm.gov', role: 'Officer', department: 'Admin', status: 'Inactive', lastLogin: '2026-10-20 14:00', createdAt: '2022-08-12' },
-  { id: 'USR-009', name: 'Meera Thapa', email: 'meera.t@scm.gov', role: 'Viewer', department: 'Finance', status: 'Active', lastLogin: '2026-11-15 13:20', createdAt: '2023-02-01' },
-  { id: 'USR-010', name: 'Sunita Basnet', email: 'sunita.b@scm.gov', role: 'Manager', department: 'IT', status: 'Suspended', lastLogin: '2026-09-30 10:00', createdAt: '2022-05-18' },
-  { id: 'USR-011', name: 'Anil Karki', email: 'anil.k@scm.gov', role: 'Officer', department: 'Logistics', status: 'Active', lastLogin: '2026-11-16 11:20', createdAt: '2023-04-10' },
-  { id: 'USR-012', name: 'Rabin Shrestha', email: 'rabin.s@scm.gov', role: 'Viewer', department: 'Operations', status: 'Active', lastLogin: '2026-11-15 14:10', createdAt: '2023-06-15' },
-  { id: 'USR-013', name: 'Deepa Adhikari', email: 'deepa.a@scm.gov', role: 'Manager', department: 'HR', status: 'Active', lastLogin: '2026-11-16 08:45', createdAt: '2022-09-01' },
-  { id: 'USR-014', name: 'Sanjay Pandey', email: 'sanjay.p@scm.gov', role: 'Officer', department: 'IT', status: 'Active', lastLogin: '2026-11-14 16:30', createdAt: '2023-01-20' },
-  { id: 'USR-015', name: 'Pooja Joshi', email: 'pooja.j@scm.gov', role: 'Viewer', department: 'Finance', status: 'Inactive', lastLogin: '2026-10-15 12:00', createdAt: '2023-08-05' },
-  { id: 'USR-016', name: 'Ganesh KC', email: 'ganesh.kc@scm.gov', role: 'Officer', department: 'Field Operations', status: 'Active', lastLogin: '2026-11-16 10:15', createdAt: '2023-10-12' },
-];
-
 function getStoredUsers(): UserItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
-    return DEFAULT_USERS;
+    return raw ? JSON.parse(raw) : [];
   } catch {
-    return DEFAULT_USERS;
+    return [];
   }
 }
 
