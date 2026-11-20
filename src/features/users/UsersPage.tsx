@@ -96,6 +96,7 @@ export const UsersPage = () => {
     const payload: UserItem = {
       id: editingUser ? editingUser.id : 0,
       name: values.name as string,
+      username: values.username as string,
       email: values.email as string,
       password: values.password as string,
       role: values.role as UserRole,
@@ -156,6 +157,13 @@ export const UsersPage = () => {
       width: 160,
     },
     {
+      title: 'Username',
+      dataIndex: 'username',
+      key: 'username',
+      width: 140,
+      render: (text: string) => <Text>{text || '—'}</Text>,
+    },
+    {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
@@ -188,12 +196,6 @@ export const UsersPage = () => {
           {status}
         </Tag>
       ),
-    },
-    {
-      title: 'Last Login',
-      dataIndex: 'lastLogin',
-      key: 'lastLogin',
-      width: 160,
     },
     {
       title: 'Actions',
@@ -250,6 +252,14 @@ export const UsersPage = () => {
         rules={[{ required: true, message: 'Please enter full name' }]}
       >
         <Input placeholder="Enter full name" />
+      </Form.Item>
+
+      <Form.Item
+        name="username"
+        label="Username"
+        rules={[{ required: true, message: 'Please enter username' }]}
+      >
+        <Input placeholder="Enter username" />
       </Form.Item>
 
       <Form.Item

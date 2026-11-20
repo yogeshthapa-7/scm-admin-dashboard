@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Button,
@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 
 import loginBackground from "../assets/images/login_background.png";
+import { login } from "./services/login.service";
+import type { LoginPayload } from "./types/auth.types";
 
 interface LoginFormValues {
   username: string;
@@ -31,38 +33,37 @@ interface LoginPageProps {
 }
 
 const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
-
-const MOCK_USER = {
-  username: "admin",
-  password: "admin@123",
-};
+const DEFAULT_COMPANY =
+  import.meta.env.VITE_DEFAULT_COMPANY || COMPANIES[0]?.id || "";
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/dashboard";
+  const from =
+    (location.state as { from?: { pathname?: string } })?.from?.pathname ||
+    "/dashboard";
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
       setLoading(true);
-
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
       if (onLogin) {
         await onLogin(values);
-      } else if (
-        values.username === MOCK_USER.username &&
-        values.password === MOCK_USER.password
-      ) {
-        localStorage.setItem("scm_auth", "true");
-        localStorage.setItem("scm_company", values.company);
-        message.success(`Login successful! Welcome back, ${values.username}.`);
+        return;
+      }
+
+      const result = await login(values as LoginPayload);
+      if (result.success) {
+        message.success(
+          `Login successful! Welcome back, ${result.user?.name || values.username}.`
+        );
         navigate(from, { replace: true });
       } else {
-        message.error("Invalid username or password. Try admin / admin@123");
+        message.error(result.message || "Unable to sign in. Please try again.");
       }
-    } catch (error) {
+    } catch {
       message.error("Unable to sign in. Please check your credentials.");
     } finally {
       setLoading(false);
@@ -70,28 +71,27 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   };
 
   const handleForgotPassword = () => {
-    message.info("Please contact your system administrator to reset your password.");
+    message.info(
+      "Please contact your system administrator to reset your password."
+    );
   };
 
   return (
-    <div className="min-h-screen w-full overflow-hidden bg-gradient-to-br from-[#eef2f7] via-[#ffffff] to-[#f5f7fa] font-['Inter','Segoe_UI',sans-serif] relative flex">
-
+    <div className="min-h-screen w-full overflow-hidden font-['Inter','Segoe_UI',sans-serif] relative flex">
       {/* FULL PAGE BACKGROUND IMAGE */}
       <img
         src={loginBackground}
         alt="Login Background"
-        className="absolute inset-0 w-full h-full object-cover z-0 opacity-[0.5]"
+        className="absolute inset-0 w-full h-full object-cover z-0"
       />
 
       {/* LEFT SPACER (pushes login form to the right side) */}
       <div className="w-full md:w-[50%] hidden md:block flex items-center justify-end px-[40px] py-[20px]">
-        <div className="w-full max-w-[320px] text-right">
-          
-        </div>
+        <div className="w-full max-w-[320px] text-right"></div>
       </div>
 
       {/* LOGIN CARD (right side) */}
-      <div className="flex-1 h-screen overflow-y-hidden items-center justify-center px-[40px] py-[20px] md:px-[80px] md:py-[40px] relative z-10">
+      <div className="flex-1 h-screen overflow-y-hidden flex items-center justify-center px-[40px] py-[20px] md:pl-[120px] md:pr-[40px] md:py-[40px] relative z-10">
         <div className="w-full max-w-[420px] flex-col rounded-[24px] border-[1.5px] border-[#ffffff]/[0.4] bg-white/[0.9] shadow-[0_24px_48px_rgba(16,45,96,0.15)] backdrop-blur-sm px-[36px] py-[44px]">
           <div className="mx-auto mb-8 flex h-[6px] w-[96px] overflow-hidden rounded-full bg-[#dbeafe]">
             <span className="w-[40%] bg-[#38bdf8]" />
@@ -116,7 +116,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               username: "",
               password: "",
               remember: false,
-              company: "",
+              company: DEFAULT_COMPANY,
             }}
             className="
               w-full
@@ -162,7 +162,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               [&_.ant-input-password-icon]:text-[16px]
             "
           >
-
             <Form.Item
               name="username"
               rules={[
@@ -212,17 +211,15 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             >
               <Select size="large" placeholder="Select Company">
                 {COMPANIES.map((c: any) => (
-                  <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                  <Select.Option key={c.id} value={c.id}>
+                    {c.name}
+                  </Select.Option>
                 ))}
               </Select>
             </Form.Item>
 
             <div className="mb-8 mt-2 flex items-center justify-between gap-3">
-              <Form.Item
-                name="remember"
-                valuePropName="checked"
-                noStyle
-              >
+              <Form.Item name="remember" valuePropName="checked" noStyle>
                 <Checkbox
                   className="
                     text-[15px] font-medium text-[#17376c]
@@ -270,7 +267,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             >
               Sign In
             </Button>
-
           </Form>
 
           <div className="mt-12 pt-10 border-t border-[#d8e4f5]">
@@ -278,10 +274,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               © {new Date().getFullYear()}. Device Management System
             </p>
           </div>
-
         </div>
       </div>
-
     </div>
   );
 };

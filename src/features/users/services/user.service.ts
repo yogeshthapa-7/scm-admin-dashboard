@@ -41,7 +41,13 @@ export async function fetchUsers(params: FetchUsersParams): Promise<FetchUsersRe
   const status = (params.status ?? '').trim();
 
   const filtered = all.filter((u) => {
-    if (search && !u.name.toLowerCase().includes(search) && !u.email.toLowerCase().includes(search) && !u.department.toLowerCase().includes(search)) return false;
+    if (
+      search &&
+      !(u.name || '').toLowerCase().includes(search) &&
+      !(u.username || '').toLowerCase().includes(search) &&
+      !(u.email || '').toLowerCase().includes(search) &&
+      !(u.department || '').toLowerCase().includes(search)
+    ) return false;
     if (role && u.role !== role) return false;
     if (status && u.status !== status) return false;
     return true;
