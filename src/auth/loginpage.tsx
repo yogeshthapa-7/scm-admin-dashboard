@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Button,
   Checkbox,
@@ -40,6 +40,8 @@ const MOCK_USER = {
 const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/dashboard";
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -56,7 +58,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         localStorage.setItem("scm_auth", "true");
         localStorage.setItem("scm_company", values.company);
         message.success(`Login successful! Welcome back, ${values.username}.`);
-        navigate("/dashboard", { replace: true });
+        navigate(from, { replace: true });
       } else {
         message.error("Invalid username or password. Try admin / admin@123");
       }

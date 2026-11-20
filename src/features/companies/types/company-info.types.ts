@@ -1,5 +1,5 @@
-﻿export interface CompanyInfoItem {
-  id: string;
+export interface CompanyInfoItem {
+  id: number | string;
   fullName: string;
   email: string;
   address: string;

@@ -21,8 +21,10 @@ import {
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer } from '@/shared/components/common/appDrawer';
 import { AppTable } from '@/shared/components/common/appTable';
+import { AppPagination } from '@/shared/components/common/AppPagination';
 import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
+import { fetchPurchases } from './services/purchase-master.service';
 import {
   formatDisplayDate,
   todayEnglish,
@@ -106,15 +108,6 @@ const STORAGE_KEY_COMPANY_ID = 'scm_company';
 const STORAGE_KEY_DEVICE_MODELS = 'device_models';
 
 const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
-
-const loadPurchases = (): Purchase[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY_PURCHASES);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
 
 const savePurchases = (data: Purchase[]) => {
   localStorage.setItem(STORAGE_KEY_PURCHASES, JSON.stringify(data));
@@ -214,9 +207,12 @@ export const PurchaseRecord = () => {
   const [company, setCompany] = useState<Company | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem | null>(null);
   const [deviceModels, setDeviceModels] = useState<DeviceModelItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setPurchases(loadPurchases());
     setDevices(loadDevices());
     setCompany(loadCompany());
     setCompanyInfo(loadCompanyInfo());
@@ -251,6 +247,26 @@ export const PurchaseRecord = () => {
   const [rejectFormDate, setRejectFormDate] = useState('');
   const [rejectFormBy, setRejectFormBy] = useState('');
   const [rejectFormReason, setRejectFormReason] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchPurchases({
+      search,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      start: (page - 1) * pageSize,
+      length: pageSize,
+    }).then((result) => {
+      if (!cancelled) {
+        setPurchases(result.items);
+        setTotal(result.total);
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [search, statusFilter, page, pageSize]);
 
   const filteredPurchases = useMemo(() => {
     return purchases.filter((purchase) => {
@@ -535,14 +551,20 @@ export const PurchaseRecord = () => {
             <Input
               placeholder="Search reference, model, make..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               prefix={<Search />}
               className="w-full sm:w-64 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
 
             <Select
               value={statusFilter}
-              onChange={setStatusFilter}
+              onChange={(value) => {
+                setStatusFilter(value);
+                setPage(1);
+              }}
               className="w-full sm:w-44 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
               <option value="all">All Status</option>
@@ -744,10 +766,20 @@ export const PurchaseRecord = () => {
             rowKey="id"
             title="Purchase Records"
             pagination={false}
-            loading={false}
+            loading={loading}
             scroll={{ x: 'max-content' }}
           />
         </div>
+
+        <AppPagination
+          current={page}
+          pageSize={pageSize}
+          total={total}
+          onChange={(newPage, newPageSize) => {
+            setPage(newPage);
+            setPageSize(newPageSize);
+          }}
+        />
 
         <div className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
           Showing {filteredPurchases.length} of {counts.total} purchases

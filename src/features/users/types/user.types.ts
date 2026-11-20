@@ -1,11 +1,11 @@
-﻿export type UserRole = 'Admin' | 'Manager' | 'Officer' | 'Viewer';
+export type UserRole = 'Admin' | 'Manager' | 'Officer' | 'Viewer';
 export type UserStatus = 'Active' | 'Inactive' | 'Suspended';
 
 export interface UserItem {
-  id: string;
+  id: number | string;
   name: string;
   email: string;
-  password: string;
+  password?: string;
   role: UserRole;
   department: string;
   status: UserStatus;

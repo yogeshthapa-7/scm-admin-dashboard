@@ -41,7 +41,7 @@ export interface PurchaseFormValues {
 }
 
 export interface PurchaseFormProps {
-  deviceModels: { id: string; name: string; make: string }[];
+  deviceModels: { id: number; name: string; make: string }[];
   companyName: string;
   companyInfoId: string;
   make: string;

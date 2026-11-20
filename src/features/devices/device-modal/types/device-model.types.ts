@@ -1,13 +1,10 @@
-﻿export interface DeviceStatusItem {
-  id: string;
-  statusName: string;
-  code: string;
-  colorCode: string;
-  orderKey: number;
+export interface DeviceModelItem {
+  id: number | string;
+  name: string;
 }
 
-// Save payload matches current key/values used in DeviceStatus page
-export type DeviceStatusSavePayload = DeviceStatusItem;
+// Save payload matches current localStorage key/values (device_models)
+export type DeviceModelSavePayload = DeviceModelItem;
 
 export interface ServerSearchModel {
   draw?: number;
@@ -16,7 +13,7 @@ export interface ServerSearchModel {
   search?: { value: string; regex: string };
 }
 
-export interface DeviceStatusServerSearchRequest {
+export interface DeviceModelServerSearchRequest {
   model: ServerSearchModel;
   param?: Record<string, unknown>;
 }
@@ -29,15 +26,15 @@ export interface ApiListResponse<T> {
   [key: string]: unknown;
 }
 
-export interface FetchDeviceStatusParams {
+export interface FetchDeviceModelsParams {
   search?: string;
   start?: number;
   length?: number;
   signal?: AbortSignal;
 }
 
-export interface FetchDeviceStatusResult {
-  items: DeviceStatusItem[];
+export interface FetchDeviceModelsResult {
+  items: DeviceModelItem[];
   total: number;
   filtered: number;
 }

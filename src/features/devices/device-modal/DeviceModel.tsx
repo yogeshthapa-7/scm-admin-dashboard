@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Typography,
@@ -8,33 +8,21 @@ import {
   theme,
   Modal,
   Space,
+  message,
 } from 'antd';
 import { Plus, Edit, Delete } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer } from '@/shared/components/common/appDrawer';
 import { AppTable } from '@/shared/components/common/appTable';
+import { AppPagination } from '@/shared/components/common/AppPagination';
+import {
+  fetchDeviceModels,
+  saveDeviceModel,
+  deleteDeviceModel,
+} from './services/device-model.service';
+import type { DeviceModelItem } from './types/device-model.types';
 
 const { Title, Text } = Typography;
-
-type DeviceModelItem = {
-  id: string;
-  name: string;
-};
-
-const STORAGE_KEY = 'device_models';
-
-const loadDeviceModels = (): DeviceModelItem[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveDeviceModels = (data: DeviceModelItem[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-};
 
 export const DeviceModel = () => {
   const { mode } = useTheme();
@@ -43,35 +31,47 @@ export const DeviceModel = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | number | null>(null);
   const [editingModel, setEditingModel] = useState<DeviceModelItem | null>(null);
   const [models, setModels] = useState<DeviceModelItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setModels(loadDeviceModels());
+  const loadData = useCallback(async (targetPage: number, size: number) => {
+    try {
+      setLoading(true);
+      const start = (targetPage - 1) * size;
+      const res = await fetchDeviceModels({ start, length: size });
+      setModels(res.items);
+      setTotal(res.total);
+    } catch {
+      message.error('Failed to load device models');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleSaveModel = (values: Record<string, unknown>) => {
-    if (editingModel) {
-      const updatedModel: DeviceModelItem = {
-        id: editingModel.id,
-        name: values.name as string,
-      };
-      const updatedList = models.map((m) =>
-        m.id === editingModel.id ? updatedModel : m,
-      );
-      setModels(updatedList);
-      saveDeviceModels(updatedList);
+  useEffect(() => {
+    loadData(page, pageSize);
+  }, [loadData, page, pageSize]);
+
+  const handleSaveModel = async (values: Record<string, unknown>) => {
+    const payload: DeviceModelItem = {
+      id: editingModel ? editingModel.id : 0,
+      name: values.name as string,
+    };
+
+    const res = await saveDeviceModel(payload);
+    if (res.success) {
+      message.success(editingModel ? 'Model updated successfully' : 'Model created successfully');
+      setDrawerOpen(false);
       setEditingModel(null);
+      loadData(page, pageSize);
     } else {
-      const newModel: DeviceModelItem = {
-        id: `MDL-${Date.now()}`,
-        name: values.name as string,
-      };
-      setModels((prev) => [...prev, newModel]);
-      saveDeviceModels([...models, newModel]);
+      message.error(res.message || 'Failed to save model');
     }
-    setDrawerOpen(false);
   };
 
   const handleEditModel = (model: DeviceModelItem) => {
@@ -79,18 +79,22 @@ export const DeviceModel = () => {
     setDrawerOpen(true);
   };
 
-  const handleDeleteConfirm = (id: string) => {
+  const handleDeleteConfirm = (id: string | number) => {
     setDeleteTargetId(id);
     setDeleteConfirmOpen(true);
   };
 
-  const handleDeleteConfirmed = () => {
-    if (!deleteTargetId) return;
-    const updatedList = models.filter((m) => m.id !== deleteTargetId);
-    setModels(updatedList);
-    saveDeviceModels(updatedList);
-    setDeleteTargetId(null);
-    setDeleteConfirmOpen(false);
+  const handleDeleteConfirmed = async () => {
+    if (deleteTargetId === null) return;
+    const res = await deleteDeviceModel(deleteTargetId);
+    if (res.success) {
+      message.success('Device model deleted successfully');
+      setDeleteTargetId(null);
+      setDeleteConfirmOpen(false);
+      loadData(page, pageSize);
+    } else {
+      message.error(res.message || 'Failed to delete device model');
+    }
   };
 
   const columns = [
@@ -99,8 +103,8 @@ export const DeviceModel = () => {
       dataIndex: 'id',
       key: 'id',
       width: 120,
-      render: (text: string) => (
-        <Text strong style={{ color: token.colorPrimary }}>{text}</Text>
+      render: (text: unknown) => (
+        <Text strong style={{ color: token.colorPrimary }}>{String(text)}</Text>
       ),
     },
     {
@@ -115,7 +119,7 @@ export const DeviceModel = () => {
       key: 'actions',
       width: 180,
       fixed: 'right' as const,
-      render: (_: any, record: DeviceModelItem) => (
+      render: (_: unknown, record: DeviceModelItem) => (
         <Space size="small">
           <Button
             onClick={() => handleEditModel(record)}
@@ -178,7 +182,10 @@ export const DeviceModel = () => {
             </Text>
           </div>
           <Button
-            onClick={() => setDrawerOpen(true)}
+            onClick={() => {
+              setEditingModel(null);
+              setDrawerOpen(true);
+            }}
             icon={<Plus size={18} />}
             className="
               h-[38px] rounded-[8px] border-[1.5px] border-white/[0.3]
@@ -199,6 +206,18 @@ export const DeviceModel = () => {
         title="Device Models"
         emptyDescription="No device models found. Click Add Model to create one."
         pagination={false}
+        loading={loading}
+      />
+
+      {/* Server-side Pagination */}
+      <AppPagination
+        current={page}
+        pageSize={pageSize}
+        total={total}
+        onChange={(newPage, newPageSize) => {
+          setPage(newPage);
+          setPageSize(newPageSize);
+        }}
       />
 
       {/* Delete confirmation */}
@@ -245,7 +264,7 @@ export const DeviceModel = () => {
         title={editingModel ? 'Edit Model' : 'Add Model'}
         confirmText={editingModel ? 'Update Model' : 'Add Model'}
         onSave={handleSaveModel}
-        initialValues={editingModel ?? undefined}
+        initialValues={editingModel ? { ...editingModel } : undefined}
       >
         <Form.Item
           name="name"

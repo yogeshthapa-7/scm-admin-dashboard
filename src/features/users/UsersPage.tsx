@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Tag,
@@ -10,6 +10,7 @@ import {
   Select,
   Form,
   Modal,
+  message,
 } from 'antd';
 import {
   Shield,
@@ -20,23 +21,9 @@ import {
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer } from '@/shared/components/common/appDrawer';
 import { AppTable } from '@/shared/components/common/appTable';
-
-const { Title, Text } = Typography;
-
-type UserRole = 'Admin' | 'Manager' | 'Officer' | 'Viewer';
-type UserStatus = 'Active' | 'Inactive' | 'Suspended';
-
-type UserItem = {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-  department: string;
-  status: UserStatus;
-  lastLogin: string;
-  createdAt: string;
-};
+import { AppPagination } from '@/shared/components/common/AppPagination';
+import { fetchUsers, saveUser, deleteUser } from './services/user.service';
+import type { UserItem, UserRole, UserStatus } from './types/user.types';
 
 const roleColorHex: Record<UserRole, string> = {
   Admin: '#1677ff',
@@ -71,20 +58,7 @@ const userStatusOptions = [
   { label: 'Suspended', value: 'Suspended' as UserStatus },
 ];
 
-const STORAGE_KEY = 'scm_users';
-
-const loadUsers = (): UserItem[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveUsers = (data: UserItem[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-};
+const { Title, Text } = Typography;
 
 export const UsersPage = () => {
   const { mode } = useTheme();
@@ -92,50 +66,54 @@ export const UsersPage = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | number | null>(null);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setUsers(loadUsers());
+  const loadData = useCallback(async (targetPage: number, size: number) => {
+    try {
+      setLoading(true);
+      const start = (targetPage - 1) * size;
+      const res = await fetchUsers({ start, length: size });
+      setUsers(res.users);
+      setTotal(res.total);
+    } catch {
+      message.error('Failed to load users');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleSaveUser = (values: Record<string, unknown>) => {
-    if (editingUser) {
-      const updatedUser: UserItem = {
-        id: editingUser.id,
-        name: values.name as string,
-        email: values.email as string,
-        password: values.password as string,
-        role: values.role as UserRole,
-        department: values.department as string,
-        status: values.status as UserStatus,
-        lastLogin: editingUser.lastLogin,
-        createdAt: editingUser.createdAt,
-      };
-      const updatedList = users.map((u) =>
-        u.id === editingUser.id ? updatedUser : u,
-      );
-      setUsers(updatedList);
-      saveUsers(updatedList);
+  useEffect(() => {
+    loadData(page, pageSize);
+  }, [loadData, page, pageSize]);
+
+  const handleSaveUser = async (values: Record<string, unknown>) => {
+    const payload: UserItem = {
+      id: editingUser ? editingUser.id : 0,
+      name: values.name as string,
+      email: values.email as string,
+      password: values.password as string,
+      role: values.role as UserRole,
+      department: values.department as string,
+      status: values.status as UserStatus,
+      lastLogin: editingUser ? editingUser.lastLogin : 'Never',
+      createdAt: editingUser ? editingUser.createdAt : new Date().toISOString().split('T')[0],
+    };
+
+    const res = await saveUser(payload);
+    if (res.success) {
+      message.success(editingUser ? 'User updated successfully' : 'User created successfully');
+      setDrawerOpen(false);
       setEditingUser(null);
+      loadData(page, pageSize);
     } else {
-      const now = new Date().toLocaleString();
-      const newUser: UserItem = {
-        id: `USR-${Date.now()}`,
-        name: values.name as string,
-        email: values.email as string,
-        password: values.password as string,
-        role: values.role as UserRole,
-        department: values.department as string,
-        status: values.status as UserStatus,
-        lastLogin: 'Never',
-        createdAt: now,
-      };
-      setUsers((prev) => [...prev, newUser]);
-      saveUsers([...users, newUser]);
+      message.error(res.message || 'Failed to save user');
     }
-    setDrawerOpen(false);
   };
 
   const handleEditUser = (user: UserItem) => {
@@ -143,18 +121,22 @@ export const UsersPage = () => {
     setDrawerOpen(true);
   };
 
-  const handleDeleteConfirm = (id: string) => {
+  const handleDeleteConfirm = (id: string | number) => {
     setDeleteTargetId(id);
     setDeleteConfirmOpen(true);
   };
 
-  const handleDeleteConfirmed = () => {
-    if (!deleteTargetId) return;
-    const updatedList = users.filter((u) => u.id !== deleteTargetId);
-    setUsers(updatedList);
-    saveUsers(updatedList);
-    setDeleteTargetId(null);
-    setDeleteConfirmOpen(false);
+  const handleDeleteConfirmed = async () => {
+    if (deleteTargetId === null) return;
+    const res = await deleteUser(deleteTargetId);
+    if (res.success) {
+      message.success('User deleted successfully');
+      setDeleteTargetId(null);
+      setDeleteConfirmOpen(false);
+      loadData(page, pageSize);
+    } else {
+      message.error(res.message || 'Failed to delete user');
+    }
   };
 
   const columns = [
@@ -420,7 +402,19 @@ export const UsersPage = () => {
         rowKey="id"
         title="User Accounts"
         emptyDescription="No users found"
-        pagination={{ pageSize: 10, showSizeChanger: false }}
+        pagination={false}
+        loading={loading}
+      />
+
+      {/* Server-side Pagination */}
+      <AppPagination
+        current={page}
+        pageSize={pageSize}
+        total={total}
+        onChange={(newPage, newPageSize) => {
+          setPage(newPage);
+          setPageSize(newPageSize);
+        }}
       />
 
       {/* Delete confirmation */}
@@ -467,7 +461,7 @@ export const UsersPage = () => {
         title={editingUser ? 'Edit User' : 'Add User'}
         confirmText={editingUser ? 'Update User' : 'Add User'}
         onSave={handleSaveUser}
-        initialValues={editingUser ?? undefined}
+        initialValues={editingUser ? { ...editingUser } : undefined}
       >
         {userFormFields}
       </AppDrawer>

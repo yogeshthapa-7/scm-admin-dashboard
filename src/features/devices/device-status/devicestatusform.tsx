@@ -1,27 +1,17 @@
 import {
   Form,
   Input,
-  Select,
 } from 'antd';
 
 export const DeviceStatusFormItems = () => {
-  const statusOptions = [
-    { label: 'Active', value: 'Active' },
-    { label: 'Deleted', value: 'Deleted' },
-    { label: 'Defective', value: 'Defective' },
-  ];
-
   return (
     <>
       <Form.Item
         name="statusName"
         label="Device Status Name"
-        rules={[{ required: true, message: 'Please select status name' }]}
+        rules={[{ required: true, message: 'Please enter status name' }]}
       >
-        <Select
-          options={statusOptions}
-          placeholder="Select status name"
-        />
+        <Input placeholder="e.g. Active, In-Stock, Under Repair" />
       </Form.Item>
 
       <Form.Item
@@ -52,14 +42,13 @@ export const DeviceStatusFormItems = () => {
         name="orderKey"
         label="Order Key"
         rules={[
-          { required: true, message: 'Please enter an order key' },
           {
             validator: (_: any, value: any) => {
               if (value === '' || value === undefined || value === null) {
-                return Promise.reject(new Error('Please enter an order key'));
+                return Promise.resolve();
               }
               const num = Number(value);
-              if (isNaN(num)) {
+              if (Number.isNaN(num)) {
                 return Promise.reject(new Error('Order key must be a number'));
               }
               return Promise.resolve();

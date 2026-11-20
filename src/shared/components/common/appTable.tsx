@@ -1,9 +1,11 @@
+import React from 'react';
 import { Table, Typography, Empty } from 'antd';
 import type { TableProps } from 'antd';
+import { AppPagination, type AppPaginationProps } from './AppPagination';
 
 const { Title } = Typography;
 
-interface AppTableProps<RecordType = any> extends Omit<TableProps<RecordType>, 'rowKey' | 'title'> {
+export interface AppTableProps<RecordType = any> extends Omit<TableProps<RecordType>, 'rowKey' | 'title'> {
   columns: TableProps<RecordType>['columns'];
   dataSource: RecordType[];
   rowKey?: string | ((record: RecordType) => React.Key);
@@ -14,6 +16,7 @@ interface AppTableProps<RecordType = any> extends Omit<TableProps<RecordType>, '
   emptyDescription?: string;
   loading?: boolean;
   bordered?: boolean;
+  serverPagination?: AppPaginationProps;
 }
 
 export const AppTable = <RecordType = any>({
@@ -27,6 +30,7 @@ export const AppTable = <RecordType = any>({
   emptyDescription = 'No records found',
   loading = false,
   bordered = true,
+  serverPagination,
   ...rest
 }: AppTableProps<RecordType>) => {
   const centeredColumns = columns.map((col) => ({
@@ -57,6 +61,7 @@ export const AppTable = <RecordType = any>({
         }}
         {...rest}
       />
+      {serverPagination && <AppPagination {...serverPagination} />}
     </div>
   );
 };

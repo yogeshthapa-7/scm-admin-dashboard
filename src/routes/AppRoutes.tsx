@@ -8,15 +8,7 @@ import { CompanyInfo } from '@/features/companies/CompanyInfo';
 import { UsersPage } from '@/features/users/UsersPage';
 import { ReportsPage } from '@/features/reports/ReportsPage';
 import LoginPage from "@/auth/loginpage";
-
-const isAuthenticated = () => localStorage.getItem('scm_auth') === 'true';
-
-const AuthLayout = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-  return <>{children}</>;
-};
+import { ProtectedRoute } from './ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
@@ -29,9 +21,9 @@ export const router = createBrowserRouter([
   },
   {
     element: (
-      <AuthLayout>
+      <ProtectedRoute>
         <DashboardLayout />
-      </AuthLayout>
+      </ProtectedRoute>
     ),
     children: [
       { path: 'dashboard', element: <DashboardPage /> },
