@@ -187,7 +187,7 @@ h1, h2, h3, h4, h5, h6,
     radial-gradient(ellipse at 80% 80%, rgba(220, 225, 235, 0.3) 0%, transparent 60%),
     linear-gradient(135deg, #eef1f6 0%, #e0e4eb 30%, #f5f7fa 60%, #dfe3ea 100%);
   position: relative;
-  overflow: auto;
+  overflow: visible;
 }
 
 .mobile-menu-button {
@@ -223,7 +223,8 @@ h1, h2, h3, h4, h5, h6,
 
   .content-area {
     padding: 16px !important;
-    overflow-x: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
   }
 
   .ant-layout-header {

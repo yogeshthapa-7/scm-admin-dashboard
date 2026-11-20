@@ -603,7 +603,7 @@ export const PurchaseRecord = () => {
                 onChange={(value) => {
                   setFromDateDraft(value);
                 }}
-                className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
+                className="h-[34px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
               />
             </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
@@ -615,7 +615,7 @@ export const PurchaseRecord = () => {
                 onChange={(value) => {
                   setToDateDraft(value);
                 }}
-                className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
+                className="h-[34px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
               />
             </label>
           </fieldset>
