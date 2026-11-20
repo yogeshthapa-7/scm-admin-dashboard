@@ -139,12 +139,6 @@ export const DeviceStatus = () => {
       width: 120,
     },
     {
-      title: 'Order',
-      dataIndex: 'orderKey',
-      key: 'orderKey',
-      width: 100,
-    },
-    {
       title: 'Actions',
       key: 'actions',
       width: 180,

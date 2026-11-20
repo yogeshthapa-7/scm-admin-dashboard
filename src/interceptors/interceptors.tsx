@@ -19,25 +19,91 @@ const api = axios.create({
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
-const AUTH_ENDPOINTS = ['/Auth/login', '/Auth/register', '/Auth/refresh', '/auth/login', '/auth/register', '/auth/refresh'];
+const AUTH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh'];
 
 function isAuthEndpoint(url?: string): boolean {
   if (!url) return false;
-  return AUTH_ENDPOINTS.some((ep) => url.includes(ep));
+  const lower = url.toLowerCase();
+  return AUTH_PATHS.some((ep) => lower.includes(ep));
 }
 
 let isRefreshing = false;
-let refreshQueue: Array<(token: string | null) => void> = [];
+let refreshQueue: Array<(token: string | null, error?: unknown) => void> = [];
 
-function processQueue(token: string | null) {
-  refreshQueue.forEach((cb) => cb(token));
+function processQueue(token: string | null, error?: unknown) {
+  refreshQueue.forEach((cb) => cb(token, error));
   refreshQueue = [];
 }
 
 function redirectToLogin() {
   if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-    window.location.href = '/login';
+    window.location.replace('/login');
   }
+}
+
+function isRefreshUnauthorized(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const status = error.response?.status;
+  if (status === 401 || status === 403) return true;
+  const data = error.response?.data as any;
+  if (!data) return false;
+  const msg = String(data.message ?? data.Message ?? data.error ?? data.error_description ?? '').toLowerCase();
+  const respType = String(data.responseType ?? '').toLowerCase();
+  return (
+    data.success === false ||
+    respType.includes('fail') ||
+    respType.includes('error') ||
+    msg.includes('invalid') ||
+    msg.includes('expired') ||
+    msg.includes('unauthorized')
+  );
+}
+
+async function requestTokenRefresh(): Promise<string> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const refreshResponse = await axios.post(
+    REFRESH_URL,
+    { refreshToken },
+    { headers: { 'Content-Type': 'application/json' }, timeout: 15000 },
+  );
+
+  const payload = refreshResponse.data ?? {};
+  const data = payload.data ?? payload.result ?? payload;
+  const responseFailed =
+    payload.success === false ||
+    payload.isSuccess === false ||
+    String(payload.responseType ?? '').toLowerCase().includes('fail') ||
+    String(payload.responseType ?? '').toLowerCase().includes('error');
+
+  if (responseFailed) {
+    throw new Error(String(payload.message ?? payload.Message ?? 'Token refresh failed'));
+  }
+
+  const newAccessToken: string | undefined =
+    data.accessToken ?? data.AccessToken ?? data.token ?? data.access_token ?? payload.accessToken;
+  const newRefreshToken: string | undefined =
+    data.refreshToken ?? data.RefreshToken ?? data.refresh_token ?? payload.refreshToken ?? refreshToken;
+  const accessTokenExpiresAt: string | undefined =
+    data.accessTokenExpiresAt ?? data.AccessTokenExpiresAt ?? data.accessTokenExpiry;
+  const refreshTokenExpiresAt: string | undefined =
+    data.refreshTokenExpiresAt ?? data.RefreshTokenExpiresAt ?? data.refreshTokenExpiry;
+
+  if (!newAccessToken) {
+    throw new Error('No access token returned from refresh');
+  }
+
+  setTokens({
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    accessTokenExpiresAt,
+    refreshTokenExpiresAt,
+  });
+
+  return newAccessToken;
 }
 
 api.interceptors.request.use(
@@ -58,19 +124,23 @@ api.interceptors.response.use(
     const originalRequest = error.config as RetryableRequestConfig | undefined;
     const status = error.response?.status;
 
-    if (!originalRequest || status !== 401 || isAuthEndpoint(originalRequest.url)) {
-      if (status === 401 && isAuthEndpoint(originalRequest?.url)) {
-        clearSession();
-      }
+    if (!originalRequest || status !== 401) {
       return Promise.reject(error);
     }
 
-    if (originalRequest._retry) {
-      clearSession();
-      redirectToLogin();
+    // Never attempt refresh for auth endpoints; let caller handle (e.g. login errors)
+    if (isAuthEndpoint(originalRequest.url)) {
       return Promise.reject(error);
     }
-    originalRequest._retry = true;
+
+    // Already retried once after refresh; give up
+    if (originalRequest._retry) {
+      if (getRefreshToken()) {
+        clearSession();
+        redirectToLogin();
+      }
+      return Promise.reject(error);
+    }
 
     const refreshToken = getRefreshToken();
     if (!refreshToken) {
@@ -81,9 +151,9 @@ api.interceptors.response.use(
 
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
-        refreshQueue.push((token) => {
+        refreshQueue.push((token, refreshError) => {
           if (!token) {
-            reject(error);
+            reject(refreshError ?? error);
             return;
           }
           originalRequest.headers = originalRequest.headers ?? ({} as any);
@@ -93,44 +163,21 @@ api.interceptors.response.use(
       });
     }
 
+    originalRequest._retry = true;
     isRefreshing = true;
+
     try {
-      const refreshResponse = await axios.post(
-        REFRESH_URL,
-        { refreshToken },
-        { headers: { 'Content-Type': 'application/json' }, timeout: 15000 },
-      );
-
-      const payload = refreshResponse.data ?? {};
-      const data = payload.data ?? payload.result ?? payload;
-      const newAccessToken: string | undefined =
-        data.accessToken ?? data.AccessToken ?? data.token ?? data.access_token ?? payload.accessToken;
-      const newRefreshToken: string | undefined =
-        data.refreshToken ?? data.RefreshToken ?? data.refresh_token ?? payload.refreshToken ?? refreshToken;
-      const accessTokenExpiresAt: string | undefined =
-        data.accessTokenExpiresAt ?? data.AccessTokenExpiresAt ?? data.accessTokenExpiry;
-      const refreshTokenExpiresAt: string | undefined =
-        data.refreshTokenExpiresAt ?? data.RefreshTokenExpiresAt ?? data.refreshTokenExpiry;
-
-      if (!newAccessToken) {
-        throw new Error('No access token returned from refresh');
-      }
-
-      setTokens({
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-        accessTokenExpiresAt,
-        refreshTokenExpiresAt,
-      });
-
+      const newAccessToken = await requestTokenRefresh();
       processQueue(newAccessToken);
       originalRequest.headers = originalRequest.headers ?? ({} as any);
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return api(originalRequest as AxiosRequestConfig);
     } catch (refreshError) {
-      processQueue(null);
-      clearSession();
-      redirectToLogin();
+      processQueue(null, refreshError);
+      if (isRefreshUnauthorized(refreshError)) {
+        clearSession();
+        redirectToLogin();
+      }
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;

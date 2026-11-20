@@ -104,27 +104,63 @@ export async function fetchDeviceStatusSelectList(
 export async function saveDeviceStatus(
   payload: DeviceStatusSavePayload
 ): Promise<{ success: boolean; message?: string; data?: unknown }> {
-  const body = {
-    statusName: payload.statusName,
-    code: payload.code,
-    colorCode: payload.colorCode,
-    orderKey: Number(payload.orderKey ?? 0),
-  };
-
   const id = payload.id;
   const isUpdate = id !== undefined && id !== null && id !== '' && Number(id) !== 0;
+
+  const orderKeyNum = Number(payload.orderKey);
+  const orderKey = Number.isFinite(orderKeyNum) ? orderKeyNum : 0;
+
+  const body: Record<string, unknown> = {
+    statusName: String(payload.statusName ?? '').trim(),
+    code: String(payload.code ?? '').trim(),
+    colorCode: String(payload.colorCode ?? '#52c41a'),
+    orderKey,
+  };
+
+  if (isUpdate) {
+    const n = Number(id);
+    const resolvedId = Number.isFinite(n) ? n : id;
+    body.id = resolvedId;
+    body.Id = resolvedId;
+    body.deviceStatusId = resolvedId;
+  }
+
   const res = isUpdate
     ? await api.put(`${UPDATE_URL}/${id}`, body)
     : await api.post(CREATE_URL, body);
 
-  return { success: true, message: extractMessage(res.data, 'Saved successfully'), data: res.data };
+  const data = res.data;
+  const failed =
+    data &&
+    (data.success === false ||
+      data.isSuccess === false ||
+      String(data.responseType || '').toLowerCase().includes('fail') ||
+      String(data.responseType || '').toLowerCase().includes('error'));
+
+  if (failed) {
+    throw new Error(extractMessage(data, 'Save failed'));
+  }
+
+  return { success: true, message: extractMessage(data, 'Saved successfully'), data };
 }
 
 export async function deleteDeviceStatus(
   id: number | string
 ): Promise<{ success: boolean; message?: string; data?: unknown }> {
   const res = await api.delete(`${DELETE_URL}/${id}`);
-  return { success: true, message: extractMessage(res.data, 'Deleted successfully'), data: res.data };
+  const data = res.data;
+  const failed =
+    data &&
+    (data.success === false ||
+      data.isSuccess === false ||
+      String(data.responseType || '').toLowerCase().includes('fail') ||
+      String(data.responseType || '').toLowerCase().includes('error'));
+
+  if (failed) {
+    throw new Error(extractMessage(data, 'Delete failed'));
+  }
+
+  return { success: true, message: extractMessage(data, 'Deleted successfully'), data };
 }
 
 export const deviceStatusService = {

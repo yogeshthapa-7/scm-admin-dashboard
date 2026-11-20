@@ -9,7 +9,6 @@ export interface CompanyInfoItem {
   make: string;
 }
 
-// Save payload matches current localStorage key/values (company_info)
 export type CompanyInfoSavePayload = CompanyInfoItem;
 
 export interface ServerSearchModel {
