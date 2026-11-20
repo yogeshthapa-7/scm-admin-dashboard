@@ -82,14 +82,16 @@ export async function saveCompanyInfo(payload: CompanyInfoSavePayload): Promise<
     scmProviderId: payload.scmProviderId,
     make: payload.make,
   };
-  const res = isUpdate ? await api.put(`${UPDATE_URL}/${id}`, body) : await api.post(CREATE_URL, body);
+  const res = isUpdate
+    ? await api.put(`${UPDATE_URL}/${id}?action=UpdateCompanyInfo`, body)
+    : await api.post(CREATE_URL, body);
   const data = res.data;
   if (responseFailed(data)) return { success: false, message: extractMessage(data, 'Failed to save company'), data };
   return { success: true, message: extractMessage(data, 'Company saved successfully'), data };
 }
 
 export async function deleteCompanyInfo(id: number | string): Promise<{ success: boolean; message?: string; data?: unknown }> {
-  const res = await api.delete(`${DELETE_URL}/${id}`);
+  const res = await api.delete(`${DELETE_URL}/${id}?action=DeleteCompanyInfo`);
   const data = res.data;
   if (responseFailed(data)) return { success: false, message: extractMessage(data, 'Failed to delete company'), data };
   return { success: true, message: extractMessage(data, 'Company deleted successfully'), data };

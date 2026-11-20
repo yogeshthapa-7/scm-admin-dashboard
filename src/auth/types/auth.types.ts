@@ -1,4 +1,4 @@
-﻿import type { UserRole, UserStatus } from '@/features/users/types/user.types';
+﻿// import type { UserRole, UserStatus } from '@/features/users/types/user.types';
 
 export interface LoginPayload {
   userName: string;
@@ -12,9 +12,9 @@ export interface AuthUser {
   name: string;
   username?: string;
   email: string;
-  role: UserRole;
+  role: string; // UserRole
   department: string;
-  status: UserStatus;
+  status: string; // UserStatus
 }
 
 export interface LoginResult {

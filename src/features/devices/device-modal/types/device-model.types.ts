@@ -3,7 +3,6 @@ export interface DeviceModelItem {
   name: string;
 }
 
-// Save payload matches current localStorage key/values (device_models)
 export type DeviceModelSavePayload = DeviceModelItem;
 
 export interface ServerSearchModel {

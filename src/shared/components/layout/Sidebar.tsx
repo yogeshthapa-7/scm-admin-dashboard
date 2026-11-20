@@ -4,7 +4,6 @@ import {
   Building2,
   FileClock,
   BarChart3,
-  Users,
   Laptop,
   Monitor,
   ShoppingCart,
@@ -31,7 +30,6 @@ const menuItems = [
       { key: '/device-status', label: 'Device Status', icon: <Laptop size={20} /> },
       { key: '/company-info', label: 'Company Info', icon: <Building2 size={20} /> },
       { key: '/device-modal', label: 'Device Modal', icon: <Monitor size={20} /> },
-      { key: '/users', label: 'Users', icon: <Users size={20} /> },
     ],
   },
   {

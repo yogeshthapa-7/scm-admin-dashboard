@@ -9,6 +9,7 @@ import {
   Select,
   Form,
   theme,
+  message,
 } from 'antd';
 import {
   Search,
@@ -25,7 +26,13 @@ import { AppTable } from '@/shared/components/common/appTable';
 import { AppPagination } from '@/shared/components/common/AppPagination';
 import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
-import { fetchPurchases } from './services/purchase-master.service';
+import {
+  fetchPurchases,
+  savePurchase,
+  deletePurchase,
+} from './services/purchase-master.service';
+import { fetchCompanyInfo } from '../companies/services/company-info.service';
+import { fetchDeviceModels } from '../devices/device-modal/services/device-model.service';
 import {
   formatDisplayDate,
   todayEnglish,
@@ -64,13 +71,6 @@ interface Device {
   rejectReason?: string;
 }
 
-interface Company {
-  id: string;
-  name: string;
-  title: string;
-  logo: string;
-}
-
 interface CompanyInfoItem {
   id: string;
   fullName: string;
@@ -103,79 +103,10 @@ const STATUS_STYLES: Record<PurchaseStatus, string> = {
   4: 'bg-red-50 text-red-700 border border-red-200',
 };
 
-const STORAGE_KEY_PURCHASES = 'scm_purchases';
-const STORAGE_KEY_DEVICES = 'scm_devices';
-const STORAGE_KEY_COMPANY_ID = 'scm_company';
-const STORAGE_KEY_DEVICE_MODELS = 'device_models';
-const STORAGE_KEY_USERS = 'scm_users';
-
-const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
-
-const savePurchases = (data: Purchase[]) => {
-  localStorage.setItem(STORAGE_KEY_PURCHASES, JSON.stringify(data));
-};
-
-const loadDevices = (): Device[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY_DEVICES);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveDevices = (data: Device[]) => {
-  localStorage.setItem(STORAGE_KEY_DEVICES, JSON.stringify(data));
-};
-
-const loadCompany = (): Company | null => {
-  try {
-    const companyId = localStorage.getItem(STORAGE_KEY_COMPANY_ID);
-    if (!companyId) return null;
-    const company = COMPANIES.find((c: any) => c.id === companyId);
-    return company || null;
-  } catch {
-    return null;
-  }
-};
-
-const loadDeviceModels = (): DeviceModelItem[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY_DEVICE_MODELS);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
 interface UserOption {
   id: string | number;
   name: string;
 }
-
-const loadUsers = (): UserOption[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY_USERS);
-    if (!data) return [];
-    const list = JSON.parse(data);
-    return Array.isArray(list)
-      ? list.map((u: any) => ({ id: u.id, name: u.name || '' })).filter((u: UserOption) => u.name)
-      : [];
-  } catch {
-    return [];
-  }
-};
-
-const loadCompanyInfo = (): CompanyInfoItem | null => {
-  try {
-    const data = localStorage.getItem('company_info');
-    if (!data) return null;
-    const list: CompanyInfoItem[] = JSON.parse(data);
-    return list.length > 0 ? list[0] : null;
-  } catch {
-    return null;
-  }
-};
 
 function generateSerialNumber(prefix: string, padding: number, number: number) {
   return `${prefix}-${String(number).padStart(padding, '0')}`;
@@ -225,26 +156,34 @@ export const PurchaseRecord = () => {
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
-  const [company, setCompany] = useState<Company | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem | null>(null);
   const [deviceModels, setDeviceModels] = useState<DeviceModelItem[]>([]);
-  const [users, setUsers] = useState<UserOption[]>([]);
+  const [users] = useState<UserOption[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setDevices(loadDevices());
-    setCompany(loadCompany());
-    setCompanyInfo(loadCompanyInfo());
-    setDeviceModels(loadDeviceModels());
-    setUsers(loadUsers());
+    let cancelled = false;
+    Promise.all([fetchCompanyInfo({ length: 1 }), fetchDeviceModels({ length: 1000 })])
+      .then(([companyResult, modelResult]) => {
+        if (cancelled) return;
+        const companyItem = companyResult.items[0];
+        setCompanyInfo(companyItem ? { ...companyItem, id: String(companyItem.id) } : null);
+        setDeviceModels(modelResult.items.map((model) => ({ id: String(model.id), name: model.name })));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCompanyInfo(null);
+          setDeviceModels([]);
+        }
+      });
+    return () => { cancelled = true; };
   }, []);
 
-  // Company info values come from the Company Info page (company_info localStorage)
-  const companyName = companyInfo?.fullName || company?.name || '';
-  const companyInfoId = companyInfo?.id || company?.id || '';
+  const companyName = companyInfo?.fullName || '';
+  const companyInfoId = companyInfo?.id || '';
   const companyMake = companyInfo?.make || '';
 
   const deviceModelsWithMake = deviceModels.map((dm) => ({
@@ -293,8 +232,18 @@ export const PurchaseRecord = () => {
     return () => { cancelled = true; };
   }, [search, statusFilter, page, pageSize]);
 
+  const enrichedPurchases = useMemo(
+    () => purchases.map((purchase) => ({
+      ...purchase,
+      deviceModel: purchase.deviceModel || deviceModels.find(
+        (model) => String(model.id) === String(purchase.deviceModelId),
+      )?.name || String(purchase.deviceModelId),
+    })),
+    [purchases, deviceModels],
+  );
+
   const filteredPurchases = useMemo(() => {
-    return purchases.filter((purchase) => {
+    return enrichedPurchases.filter((purchase) => {
       if (purchase.status === 0) return false;
       const matchesSearch =
         purchase.refNo.toLowerCase().includes(search.toLowerCase()) ||
@@ -303,17 +252,17 @@ export const PurchaseRecord = () => {
       const matchesStatus = statusFilter === 'all' || String(purchase.status) === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [purchases, search, statusFilter]);
+  }, [enrichedPurchases, search, statusFilter]);
 
   const counts = {
-    total: purchases.filter((p) => p.status !== 0 && p.status !== 4).length,
-    draft: purchases.filter((p) => p.status === 2).length,
-    approved: purchases.filter((p) => p.status === 1).length,
-    generated: purchases.filter((p) => p.status === 3).length,
-    rejected: purchases.filter((p) => p.status === 4).length,
+    total: enrichedPurchases.filter((p) => p.status !== 0 && p.status !== 4).length,
+    draft: enrichedPurchases.filter((p) => p.status === 2).length,
+    approved: enrichedPurchases.filter((p) => p.status === 1).length,
+    generated: enrichedPurchases.filter((p) => p.status === 3).length,
+    rejected: enrichedPurchases.filter((p) => p.status === 4).length,
   };
 
-  const handleSavePurchase = (values: any) => {
+  const handleSavePurchase = async (values: any) => {
     const selectedModel = deviceModels.find((dm) => String(dm.id) === values.deviceModelId);
     if (!selectedModel) return;
 
@@ -321,14 +270,16 @@ export const PurchaseRecord = () => {
     const snPrefix = String(values.snPrefix || '').trim();
     const snPadding = Number(values.snPadding);
     const totalItem = Number(values.totalItem);
-    const snStart = getNextSnStart(snPrefix, purchases, devices, editingPurchase?.id ?? null);
+    const allPurchasesResult = await fetchPurchases({ length: 100000 });
+    const allPurchases = allPurchasesResult.items;
+    const snStart = getNextSnStart(snPrefix, allPurchases, devices, editingPurchase?.id ?? null);
 
     const newSerials = Array.from({ length: totalItem }, (_, index) =>
       generateSerialNumber(snPrefix, snPadding, snStart + index)
     );
     const taken = new Set<string>();
     devices.forEach((d) => taken.add(d.serialNumber));
-    purchases.forEach((p) => {
+    allPurchases.forEach((p) => {
       if (p.status === 0) return;
       if (editingPurchase && p.id === editingPurchase.id) return;
       const pStart = p.snStart ?? 1;
@@ -342,53 +293,34 @@ export const PurchaseRecord = () => {
       return;
     }
 
-    if (editingPurchase) {
-      setPurchases((prev) => {
-        const updated = prev.map((p) =>
-          p.id === editingPurchase.id
-            ? {
-                ...p,
-                trnDate: englishDate,
-                refNo: values.refNo,
-                narration: values.narration,
-                deviceModelId: selectedModel.id,
-                deviceModel: selectedModel.name,
-                make: companyMake,
-                snPrefix,
-                snPadding,
-                snStart,
-                totalItem,
-              }
-            : p
-        );
-        savePurchases(updated);
-        return updated;
-      });
+    const payload: Purchase = {
+      id: editingPurchase?.id ?? 0,
+      trnDate: englishDate,
+      refNo: values.refNo,
+      narration: values.narration || '',
+      companyInfoId,
+      companyName,
+      make: companyMake,
+      deviceModelId: String(selectedModel.id),
+      deviceModel: selectedModel.name,
+      snPrefix,
+      snPadding,
+      snStart,
+      totalItem,
+      status: editingPurchase?.status ?? 2,
+    };
+
+    try {
+      const result = await savePurchase(payload);
+      if (!result.success) throw new Error(result.message || 'Failed to save purchase');
+      setFormOpen(false);
       setEditingPurchase(null);
-    } else {
-      setPurchases((prev) => {
-        const newPurchase: Purchase = {
-          id: Math.max(0, ...prev.map((p) => p.id)) + 1,
-          trnDate: englishDate,
-          refNo: values.refNo,
-          narration: values.narration,
-          companyInfoId,
-          companyName,
-          make: companyMake,
-                deviceModelId: selectedModel.id,
-                deviceModel: selectedModel.name,
-                snPrefix,
-                snPadding,
-                snStart,
-                totalItem,
-                status: 2,
-        };
-        const newList = [newPurchase, ...prev];
-        savePurchases(newList);
-        return newList;
-      });
+      const refreshed = await fetchPurchases({ search, status: statusFilter === 'all' ? undefined : statusFilter, start: (page - 1) * pageSize, length: pageSize });
+      setPurchases(refreshed.items);
+      setTotal(refreshed.total);
+    } catch (error: any) {
+      message.error(error?.message || 'Failed to save purchase');
     }
-    setFormOpen(false);
   };
 
   const handleEditPurchase = (purchase: Purchase) => {
@@ -442,14 +374,12 @@ export const PurchaseRecord = () => {
 
     setDevices((prev) => {
       const newDeviceList = [...prev, ...newDevices];
-      saveDevices(newDeviceList);
       return newDeviceList;
     });
 
     const generated: Purchase = { ...purchase, status: 3 as PurchaseStatus };
     setPurchases((prev) => {
       const updated = prev.map((p) => (p.id === purchase.id ? generated : p));
-      savePurchases(updated);
       return updated;
     });
 
@@ -459,20 +389,19 @@ export const PurchaseRecord = () => {
     setShowGenerateForm(false);
   };
 
-  const handleDeletePurchase = (purchase: Purchase) => {
+  const handleDeletePurchase = async (purchase: Purchase) => {
     if (![1, 2, 3, 4].includes(purchase.status)) return;
-    const updated = purchases.map((p) =>
-      p.id === purchase.id ? { ...p, status: 0 as PurchaseStatus } : p
-    );
-    setPurchases(updated);
-    savePurchases(updated);
-    setDeleteConfirmOpen(false);
-    setDeleteTargetPurchase(null);
-    if (viewingPurchase?.id === purchase.id) {
-      setViewingPurchase(null);
-    }
-    if (selectedPurchase?.id === purchase.id) {
-      setSelectedPurchase(null);
+    try {
+      const result = await deletePurchase(purchase.id);
+      if (!result.success) throw new Error(result.message || 'Failed to delete purchase');
+      setPurchases((prev) => prev.filter((item) => item.id !== purchase.id));
+      setTotal((value) => Math.max(0, value - 1));
+      setDeleteConfirmOpen(false);
+      setDeleteTargetPurchase(null);
+      if (viewingPurchase?.id === purchase.id) setViewingPurchase(null);
+      if (selectedPurchase?.id === purchase.id) setSelectedPurchase(null);
+    } catch (error: any) {
+      message.error(error?.message || 'Failed to delete purchase');
     }
   };
 
@@ -482,7 +411,6 @@ export const PurchaseRecord = () => {
       p.id === purchase.id ? { ...p, status: 1 as PurchaseStatus } : p
     );
     setPurchases(updated);
-    savePurchases(updated);
     setApproveConfirmOpen(false);
     setApproveTargetPurchase(null);
     if (viewingPurchase?.id === purchase.id) {
@@ -504,7 +432,6 @@ export const PurchaseRecord = () => {
     };
     const updated = purchases.map((p) => (p.id === purchase.id ? updatedPurchase : p));
     setPurchases(updated);
-    savePurchases(updated);
     setShowRejectForm(false);
     setRejectFormDate('');
     setRejectFormBy('');
@@ -524,8 +451,6 @@ export const PurchaseRecord = () => {
           : d
       )
     );
-    saveDevices(devices);
-
     setShowRejectModal(false);
     setRejectingDevice(null);
     setRejectReason('');
@@ -622,15 +547,6 @@ export const PurchaseRecord = () => {
       <div className="overflow-x-auto">
         <AppTable<Purchase>
           columns={[
-            {
-              title: 'ID',
-              dataIndex: 'id',
-              key: 'id',
-              width: 100,
-              render: (text: number) => (
-                <Text strong style={{ color: '#1677ff' }}>{text}</Text>
-              ),
-            },
             {
               title: 'Reference No.',
               dataIndex: 'refNo',

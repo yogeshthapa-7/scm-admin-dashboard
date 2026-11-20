@@ -117,6 +117,19 @@ export async function saveDeviceStatus(
     orderKey,
   };
 
+  const existing = await fetchDeviceStatus({ length: 100000 });
+  const duplicate = existing.items.find(
+    (item) =>
+      String(item.code).trim().toLowerCase() === String(body.code).trim().toLowerCase() &&
+      String(item.id) !== String(id ?? ''),
+  );
+  if (duplicate) {
+    return {
+      success: false,
+      message: `Device status code "${body.code}" already exists. Deleted statuses may still reserve their code.`,
+    };
+  }
+
   if (isUpdate) {
     const n = Number(id);
     const resolvedId = Number.isFinite(n) ? n : id;
@@ -125,9 +138,19 @@ export async function saveDeviceStatus(
     body.deviceStatusId = resolvedId;
   }
 
-  const res = isUpdate
-    ? await api.put(`${UPDATE_URL}/${id}`, body)
-    : await api.post(CREATE_URL, body);
+  let res;
+  try {
+    res = isUpdate
+      ? await api.put(`${UPDATE_URL}/${id}?action=UpdateDeviceStatus`, body)
+      : await api.post(CREATE_URL, body);
+  } catch (error: any) {
+    if (!isUpdate && (error?.response?.status === 500 || error?.message === 'Network Error')) {
+      throw new Error(
+        `Device status code "${body.code}" already exists or is reserved by a deleted status.`,
+      );
+    }
+    throw error;
+  }
 
   const data = res.data;
   const failed =
@@ -147,7 +170,7 @@ export async function saveDeviceStatus(
 export async function deleteDeviceStatus(
   id: number | string
 ): Promise<{ success: boolean; message?: string; data?: unknown }> {
-  const res = await api.delete(`${DELETE_URL}/${id}`);
+  const res = await api.delete(`${DELETE_URL}/${id}?action=DeleteDeviceStatus`);
   const data = res.data;
   const failed =
     data &&

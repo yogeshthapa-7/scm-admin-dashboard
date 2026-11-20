@@ -5,7 +5,6 @@ import {
   Button,
   Input,
   Form,
-  theme,
   Modal,
   Space,
   message,
@@ -26,7 +25,6 @@ const { Title, Text } = Typography;
 
 export const DeviceModel = () => {
   const { mode } = useTheme();
-  const { token } = theme.useToken();
   const isDark = mode === 'dark';
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -102,15 +100,6 @@ export const DeviceModel = () => {
   };
 
   const columns = [
-    {
-      title: 'Id',
-      dataIndex: 'id',
-      key: 'id',
-      width: 120,
-      render: (text: unknown) => (
-        <Text strong style={{ color: token.colorPrimary }}>{String(text)}</Text>
-      ),
-    },
     {
       title: 'Model Name',
       dataIndex: 'name',

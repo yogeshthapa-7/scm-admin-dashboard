@@ -51,7 +51,6 @@ export interface PurchaseFormProps {
   readOnly?: boolean;
 }
 
-// Save payload matches current localStorage key/values (scm_purchases)
 export type PurchaseSavePayload = Purchase;
 
 export interface ServerSearchModel {

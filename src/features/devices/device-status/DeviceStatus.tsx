@@ -62,6 +62,9 @@ export const DeviceStatus = () => {
 
     try {
       const res = await saveDeviceStatus(payload);
+      if (!res.success) {
+        throw new Error(res.message || 'Failed to save device status');
+      }
       message.success(res.message || (editingStatus ? 'Device status updated' : 'Device status created'));
       setDrawerOpen(false);
       setEditingStatus(null);
@@ -102,15 +105,6 @@ export const DeviceStatus = () => {
   };
 
   const columns = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 100,
-      render: (text: unknown) => (
-        <Text strong style={{ color: '#1677ff' }}>{String(text)}</Text>
-      ),
-    },
     {
       title: 'Status Name',
       dataIndex: 'statusName',
