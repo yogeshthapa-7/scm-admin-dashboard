@@ -27,7 +27,7 @@ export const DashboardLayout = () => {
       <Layout>
         <Navbar onMenuClick={() => setMobileMenuOpen(true)} />
         <Content
-          className={`content-area ${isDark ? 'dark' : ''}`}
+          className={`content-area p-6 lg:p-8 xl:p-10 ${isDark ? 'dark' : ''}`}
           style={{ transition: 'background 0.5s ease' }}
         >
           <Outlet />

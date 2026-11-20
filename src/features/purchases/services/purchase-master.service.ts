@@ -20,7 +20,17 @@ export const DELETE_URL = `${BASE_URL}${RESOURCE_PATH}/DeletePurchase`;
 
 function toItem(raw: any): Purchase {
   const rawDate = raw?.tranDate ?? raw?.trnDate ?? raw?.TranDate ?? raw?.TrnDate ?? '';
-  const rawStatus = raw?.status ?? raw?.Status;
+  const rawStatus = raw?.status ?? raw?.Status ?? raw?.purchaseStatus ?? raw?.PurchaseStatus;
+  const normalizedStatus = typeof rawStatus === 'string'
+    ? ({
+        deleted: 0,
+        approved: 1,
+        draft: 2,
+        generated: 3,
+        'device generated': 3,
+        rejected: 4,
+      } as Record<string, number>)[rawStatus.trim().toLowerCase()]
+    : rawStatus;
   return {
     id: Number(raw?.id ?? raw?.Id ?? 0),
     trnDate: String(rawDate).slice(0, 10),
@@ -35,7 +45,7 @@ function toItem(raw: any): Purchase {
     snPadding: Number(raw?.snPadding ?? raw?.SnPadding ?? 0),
     snStart: raw?.snStart ?? raw?.SnStart,
     totalItem: Number(raw?.totalQty ?? raw?.TotalQty ?? raw?.totalItem ?? raw?.TotalItem ?? 0),
-    status: (rawStatus === undefined || rawStatus === null || rawStatus === '' ? 2 : Number(rawStatus)) as Purchase['status'],
+    status: (normalizedStatus === undefined || normalizedStatus === null || normalizedStatus === '' ? 2 : Number(normalizedStatus)) as Purchase['status'],
     rejectedDate: raw?.rejectedDate ?? raw?.RejectedDate,
     rejectedBy: raw?.rejectedBy ?? raw?.RejectedBy,
     rejectedReason: raw?.rejectedReason ?? raw?.RejectedReason,
@@ -88,13 +98,17 @@ export async function fetchPurchases(params: FetchPurchasesParams = {}): Promise
   const all = addDerivedSerialStarts(extractItems(res.data));
   const search = (params.search ?? '').trim().toLowerCase();
   const status = params.status == null ? '' : String(params.status);
+  const fromDate = params.fromDate ?? '';
+  const toDate = params.toDate ?? '';
   const filtered = all.filter((purchase) => {
     const matchesSearch = !search || purchase.refNo.toLowerCase().includes(search) || purchase.deviceModel.toLowerCase().includes(search) || purchase.make.toLowerCase().includes(search);
-    return matchesSearch && (!status || String(purchase.status) === status);
+    const transactionDate = purchase.trnDate.slice(0, 10);
+    const matchesDate = (!fromDate || transactionDate >= fromDate) && (!toDate || transactionDate <= toDate);
+    return matchesSearch && (!status || String(purchase.status) === status) && matchesDate;
   });
   const start = params.start ?? 0;
   const length = params.length ?? (filtered.length || 12);
-  return { items: filtered.slice(start, start + length), total: search || status ? filtered.length : extractTotal(res.data, all), filtered: filtered.length };
+  return { items: filtered.slice(start, start + length), total: search || status || fromDate || toDate ? filtered.length : extractTotal(res.data, all), filtered: filtered.length };
 }
 
 export async function fetchPurchaseSelectList(): Promise<SelectListItem[]> {

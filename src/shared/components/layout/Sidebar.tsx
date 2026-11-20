@@ -7,6 +7,7 @@ import {
   Laptop,
   Monitor,
   ShoppingCart,
+  Cpu,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -39,6 +40,7 @@ const menuItems = [
     icon: <FileClock size={20} />,
     children: [
       { key: '/purchase', label: 'Purchase', icon: <ShoppingCart size={20} /> },
+      { key: '/device', label: 'Device', icon: <Cpu size={20} /> },
     ],
   },
   { key: '/reports', icon: <BarChart3 size={20} />, label: 'Report' },

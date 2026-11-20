@@ -26,6 +26,7 @@ import { AppTable } from '@/shared/components/common/appTable';
 import { AppPagination } from '@/shared/components/common/AppPagination';
 import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
+import { getAuthUser } from '@/auth/services/login.service';
 import {
   fetchPurchases,
   savePurchase,
@@ -67,8 +68,48 @@ interface Device {
   purchaseMasterId: number;
   serialNumber: string;
   model: string;
-  status: 'Available' | 'Rejected';
+  status: 'Active' | 'Rejected';
   rejectReason?: string;
+}
+
+const PURCHASE_WORKFLOW_KEY = 'purchase_workflow_overrides';
+const GENERATED_DEVICES_KEY = 'generated_devices_fallback';
+
+function loadWorkflowOverrides(): Record<string, Partial<Purchase>> {
+  try {
+    const raw = localStorage.getItem(PURCHASE_WORKFLOW_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveWorkflowOverrides(overrides: Record<string, Partial<Purchase>>) {
+  localStorage.setItem(PURCHASE_WORKFLOW_KEY, JSON.stringify(overrides));
+}
+
+function saveWorkflowOverride(purchase: Purchase) {
+  const overrides = loadWorkflowOverrides();
+  overrides[String(purchase.id)] = {
+    status: purchase.status,
+    rejectedDate: purchase.rejectedDate,
+    rejectedBy: purchase.rejectedBy,
+    rejectedReason: purchase.rejectedReason,
+  };
+  saveWorkflowOverrides(overrides);
+}
+
+function loadGeneratedDevices(): Device[] {
+  try {
+    const raw = localStorage.getItem(GENERATED_DEVICES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveGeneratedDevices(devices: Device[]) {
+  localStorage.setItem(GENERATED_DEVICES_KEY, JSON.stringify(devices));
 }
 
 interface CompanyInfoItem {
@@ -102,11 +143,6 @@ const STATUS_STYLES: Record<PurchaseStatus, string> = {
   3: 'bg-blue-50 text-blue-700 border border-blue-100',
   4: 'bg-red-50 text-red-700 border border-red-200',
 };
-
-interface UserOption {
-  id: string | number;
-  name: string;
-}
 
 function generateSerialNumber(prefix: string, padding: number, number: number) {
   return `${prefix}-${String(number).padStart(padding, '0')}`;
@@ -155,10 +191,9 @@ export const PurchaseRecord = () => {
   const isDark = mode === 'dark';
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<Device[]>(loadGeneratedDevices);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem | null>(null);
   const [deviceModels, setDeviceModels] = useState<DeviceModelItem[]>([]);
-  const [users] = useState<UserOption[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
@@ -194,6 +229,12 @@ export const PurchaseRecord = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | '0' | '1' | '2' | '3' | '4'>('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [searchDraft, setSearchDraft] = useState('');
+  const [statusDraft, setStatusDraft] = useState<'all' | '0' | '1' | '2' | '3' | '4'>('all');
+  const [fromDateDraft, setFromDateDraft] = useState('');
+  const [toDateDraft, setToDateDraft] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
   const [viewingPurchase, setViewingPurchase] = useState<Purchase | null>(null);
@@ -208,8 +249,6 @@ export const PurchaseRecord = () => {
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [generatingDevices, setGeneratingDevices] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
-  const [rejectFormDate, setRejectFormDate] = useState('');
-  const [rejectFormBy, setRejectFormBy] = useState('');
   const [rejectFormReason, setRejectFormReason] = useState('');
 
   useEffect(() => {
@@ -217,28 +256,38 @@ export const PurchaseRecord = () => {
     setLoading(true);
     fetchPurchases({
       search,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-      start: (page - 1) * pageSize,
-      length: pageSize,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+      start: 0,
+      length: 100000,
     }).then((result) => {
       if (!cancelled) {
-        setPurchases(result.items);
-        setTotal(result.total);
+        const overrides = loadWorkflowOverrides();
+        setPurchases(result.items.map((purchase) => ({
+          ...purchase,
+          ...(overrides[String(purchase.id)] || {}),
+        })));
+        setTotal(result.items.length);
         setLoading(false);
       }
     }).catch(() => {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, [search, statusFilter, page, pageSize]);
+  }, [search, statusFilter, fromDate, toDate, page, pageSize]);
 
   const enrichedPurchases = useMemo(
-    () => purchases.map((purchase) => ({
-      ...purchase,
-      deviceModel: purchase.deviceModel || deviceModels.find(
+    () => purchases.map((purchase) => {
+      const matchingModel = deviceModels.find(
         (model) => String(model.id) === String(purchase.deviceModelId),
-      )?.name || String(purchase.deviceModelId),
-    })),
+      );
+      const apiModelIsId = /^\d+$/.test(String(purchase.deviceModel));
+
+      return {
+        ...purchase,
+        deviceModel: matchingModel?.name || (!apiModelIsId ? String(purchase.deviceModel) : String(purchase.deviceModelId)),
+      };
+    }),
     [purchases, deviceModels],
   );
 
@@ -250,9 +299,11 @@ export const PurchaseRecord = () => {
         purchase.deviceModel.toLowerCase().includes(search.toLowerCase()) ||
         purchase.make.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'all' || String(purchase.status) === statusFilter;
-      return matchesSearch && matchesStatus;
+      const transactionDate = purchase.trnDate.slice(0, 10);
+      const matchesDate = (!fromDate || transactionDate >= fromDate) && (!toDate || transactionDate <= toDate);
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [enrichedPurchases, search, statusFilter]);
+  }, [enrichedPurchases, search, statusFilter, fromDate, toDate]);
 
   const counts = {
     total: enrichedPurchases.filter((p) => p.status !== 0 && p.status !== 4).length,
@@ -369,15 +420,17 @@ export const PurchaseRecord = () => {
       purchaseMasterId: purchase.id,
       serialNumber,
       model: purchase.deviceModel,
-      status: 'Available',
+      status: 'Active',
     }));
 
     setDevices((prev) => {
       const newDeviceList = [...prev, ...newDevices];
+      saveGeneratedDevices(newDeviceList);
       return newDeviceList;
     });
 
     const generated: Purchase = { ...purchase, status: 3 as PurchaseStatus };
+    saveWorkflowOverride(generated);
     setPurchases((prev) => {
       const updated = prev.map((p) => (p.id === purchase.id ? generated : p));
       return updated;
@@ -411,6 +464,7 @@ export const PurchaseRecord = () => {
       p.id === purchase.id ? { ...p, status: 1 as PurchaseStatus } : p
     );
     setPurchases(updated);
+    saveWorkflowOverride({ ...purchase, status: 1 as PurchaseStatus });
     setApproveConfirmOpen(false);
     setApproveTargetPurchase(null);
     if (viewingPurchase?.id === purchase.id) {
@@ -421,24 +475,22 @@ export const PurchaseRecord = () => {
     }
   };
 
-  const handleRejectPurchase = (purchase: Purchase, details?: { rejectedDate: string; rejectedBy: string; rejectedReason: string }) => {
+  const handleRejectPurchase = async (purchase: Purchase, rejectedReason: string) => {
     if (purchase.status !== 1 && purchase.status !== 2) return;
+    const currentUser = getAuthUser();
     const updatedPurchase: Purchase = {
       ...purchase,
       status: 4 as PurchaseStatus,
-      rejectedDate: details?.rejectedDate || todayEnglish(),
-      rejectedBy: details?.rejectedBy || '',
-      rejectedReason: details?.rejectedReason || '',
+      rejectedDate: todayEnglish(),
+      rejectedBy: currentUser?.name || currentUser?.username || 'Current User',
+      rejectedReason,
     };
     const updated = purchases.map((p) => (p.id === purchase.id ? updatedPurchase : p));
     setPurchases(updated);
+    saveWorkflowOverride(updatedPurchase);
     setShowRejectForm(false);
-    setRejectFormDate('');
-    setRejectFormBy('');
     setRejectFormReason('');
-    if (viewingPurchase?.id === purchase.id) {
-      setViewingPurchase(updatedPurchase);
-    }
+    if (viewingPurchase?.id === purchase.id) setViewingPurchase(updatedPurchase);
   };
 
   const handleRejectDevice = () => {
@@ -459,7 +511,7 @@ export const PurchaseRecord = () => {
   const statCards = [
     { label: 'Total Purchases', value: counts.total, color: '#374151' },
     { label: 'Draft', value: counts.draft, color: '#ca8a04' },
-    { label: 'Draft Approved', value: counts.approved, color: '#15803d' },
+    { label: 'Approved', value: counts.approved, color: '#15803d' },
     { label: 'Generated', value: counts.generated, color: '#1d4ed8' },
   ];
 
@@ -515,32 +567,72 @@ export const PurchaseRecord = () => {
 
       {/* Purchase table */}
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex w-full flex-wrap items-end gap-3 lg:flex-nowrap">
           <Input
-            placeholder="Search reference, model, make..."
-            value={search}
+            placeholder="Search reference number..."
+            value={searchDraft}
             onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
+              setSearchDraft(e.target.value);
             }}
             prefix={<Search />}
-            className="w-full sm:w-64 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-40 lg:w-44"
           />
 
           <Select
-            value={statusFilter}
+            value={statusDraft}
             onChange={(value) => {
-              setStatusFilter(value);
-              setPage(1);
+              setStatusDraft(value);
             }}
-            className="w-full sm:w-44 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-36 lg:w-40"
           >
             <option value="all">All Status</option>
             <option value="2">Draft</option>
-            <option value="1">Draft Approved</option>
+            <option value="1">Approved</option>
             <option value="3">Generated</option>
             <option value="4">Rejected</option>
           </Select>
+
+          <fieldset className="flex w-full shrink-0 items-end gap-2 rounded-lg border border-gray-300 px-2 pb-1 pt-0 sm:w-auto">
+            <legend className="px-1 text-xs font-medium text-gray-600">Transaction Date</legend>
+            <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+              From
+              <NepaliDatePicker
+                value={fromDateDraft}
+                returnEnglishDate
+                placeholder="From date"
+                onChange={(value) => {
+                  setFromDateDraft(value);
+                }}
+                className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+              To
+              <NepaliDatePicker
+                value={toDateDraft}
+                returnEnglishDate
+                placeholder="To date"
+                onChange={(value) => {
+                  setToDateDraft(value);
+                }}
+                className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
+              />
+            </label>
+          </fieldset>
+          <Button
+            type="primary"
+            icon={<Search size={16} />}
+            onClick={() => {
+              setSearch(searchDraft);
+              setStatusFilter(statusDraft);
+              setFromDate(fromDateDraft);
+              setToDate(toDateDraft);
+              setPage(1);
+            }}
+            className="h-[38px] rounded-[8px]"
+          >
+            Search
+          </Button>
         </div>
       </div>
 
@@ -621,101 +713,45 @@ export const PurchaseRecord = () => {
               title: 'Actions',
               dataIndex: 'actions',
               key: 'actions',
-              width: 220,
+              width: 150,
               fixed: 'right' as const,
               render: (_: any, record: Purchase) => (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px' }}>
+                <div className="flex items-center gap-1">
                   <Button
+                    type="text"
+                    title="View purchase"
+                    aria-label="View purchase"
                     onClick={() => {
                       setViewingPurchase(record);
                       setFormOpen(true);
                     }}
-                    icon={<UserCheck size={14} />}
-                    style={{
-                      height: 32,
-                      borderRadius: 6,
-                      border: '1.5px solid #d1d5db',
-                      background: '#fff',
-                      color: '#4b5563',
-                      fontWeight: 500,
-                      fontSize: 14,
-                      padding: '0 12px',
-                      width: '100%',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    View
-                  </Button>
+                    icon={<UserCheck size={17} />}
+                    style={{ color: '#4b5563' }}
+                  />
 
                   {record.status === 2 && (
-                    <>
-                      <Button
-                        onClick={() => handleEditPurchase(record)}
-                        icon={<Edit size={14} />}
-                        style={{
-                          height: 32,
-                          borderRadius: 6,
-                          border: '1.5px solid #1677ff',
-                          background: '#1677ff',
-                          color: '#fff',
-                          fontWeight: 600,
-                          fontSize: 14,
-                          padding: '0 12px',
-                          boxShadow: '0 4px 8px rgba(22,119,255,0.2)',
-                          width: '100%',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setDeleteTargetPurchase(record);
-                          setDeleteConfirmOpen(true);
-                        }}
-                        icon={<Trash2 size={14} />}
-                        style={{
-                          height: 32,
-                          borderRadius: 6,
-                          border: '1.5px solid #f5222d',
-                          background: '#f5222d',
-                          color: '#fff',
-                          fontWeight: 600,
-                          fontSize: 14,
-                          padding: '0 12px',
-                          boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-                          width: '100%',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </>
+                    <Button
+                      type="text"
+                      title="Edit purchase"
+                      aria-label="Edit purchase"
+                      onClick={() => handleEditPurchase(record)}
+                      icon={<Edit size={17} />}
+                      style={{ color: '#1677ff' }}
+                    />
                   )}
 
-                  {[1, 3, 4].includes(record.status) && (
+                  {[1, 2, 3, 4].includes(record.status) && (
                     <Button
+                      type="text"
+                      title="Delete purchase"
+                      aria-label="Delete purchase"
                       onClick={() => {
                         setDeleteTargetPurchase(record);
                         setDeleteConfirmOpen(true);
                       }}
-                      icon={<Trash2 size={14} />}
-                      style={{
-                        height: 32,
-                        borderRadius: 6,
-                        border: '1.5px solid #f5222d',
-                        background: '#f5222d',
-                        color: '#fff',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        padding: '0 12px',
-                        boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-                        width: '100%',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      Delete
-                    </Button>
+                      icon={<Trash2 size={17} />}
+                      style={{ color: '#f5222d' }}
+                    />
                   )}
                 </div>
               ),
@@ -753,8 +789,6 @@ export const PurchaseRecord = () => {
           setViewingPurchase(null);
           setShowRejectForm(false);
           setShowGenerateForm(false);
-          setRejectFormDate('');
-          setRejectFormBy('');
           setRejectFormReason('');
         }}
         title={viewingPurchase ? 'View Purchase' : editingPurchase ? 'Edit Purchase' : 'Create Purchase'}
@@ -802,8 +836,6 @@ export const PurchaseRecord = () => {
                     </Button>
                     <Button
                       onClick={() => {
-                        setRejectFormDate(todayEnglish());
-                        setRejectFormBy('');
                         setRejectFormReason('');
                         setShowRejectForm((v) => !v);
                       }}
@@ -894,30 +926,7 @@ export const PurchaseRecord = () => {
             {showRejectForm && (viewingPurchase.status === 1 || viewingPurchase.status === 2) && (
               <div className="rounded-xl border border-red-200 bg-white p-4">
                 <h3 className="mb-4 font-semibold text-red-700">Reject Purchase</h3>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-gray-600">Rejected Date</p>
-                    <NepaliDatePicker
-                      value={rejectFormDate}
-                      onChange={(val) => setRejectFormDate(val)}
-                      returnEnglishDate
-                      placeholder="Select date"
-                      className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800"
-                    />
-                  </div>
-                  <div>
-                    <p className="mb-1 text-xs font-medium text-gray-600">Rejected By</p>
-                    <Select
-                      value={rejectFormBy || undefined}
-                      onChange={(val) => setRejectFormBy(String(val))}
-                      placeholder="Select user"
-                      className="w-full h-[38px]"
-                      showSearch
-                      optionFilterProp="label"
-                      allowClear
-                      options={users.map((u) => ({ label: u.name, value: u.name }))}
-                    />
-                  </div>
+                <div>
                   <div className="sm:col-span-2">
                     <p className="mb-1 text-xs font-medium text-gray-600">Rejected Reason</p>
                     <Input.TextArea
@@ -938,21 +947,17 @@ export const PurchaseRecord = () => {
                   </Button>
                   <Button
                     onClick={() => {
-                      if (!rejectFormDate || !rejectFormBy.trim() || !rejectFormReason.trim()) {
+                      if (!rejectFormReason.trim()) {
                         return;
                       }
-                      handleRejectPurchase(viewingPurchase, {
-                        rejectedDate: rejectFormDate,
-                        rejectedBy: rejectFormBy.trim(),
-                        rejectedReason: rejectFormReason.trim(),
-                      });
+                      handleRejectPurchase(viewingPurchase, rejectFormReason.trim());
                     }}
-                    disabled={!rejectFormDate || !rejectFormBy.trim() || !rejectFormReason.trim()}
+                    disabled={!rejectFormReason.trim()}
                     style={{
                       height: 36,
                       borderRadius: 8,
                       border: '1.5px solid #f5222d',
-                      background: (!rejectFormDate || !rejectFormBy.trim() || !rejectFormReason.trim()) ? '#fca5a5' : '#f5222d',
+                      background: !rejectFormReason.trim() ? '#fca5a5' : '#f5222d',
                       color: '#fff',
                       fontWeight: 600,
                       boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
@@ -1188,7 +1193,7 @@ export const PurchaseRecord = () => {
             </Button>,
           ]}
         >
-          Are you sure you want to approve purchase {approveTargetPurchase.refNo}? This will change its status to Draft Approved.
+          Are you sure you want to approve purchase {approveTargetPurchase.refNo}? This will change its status to Approved.
         </Modal>
       )}
 

@@ -25,7 +25,7 @@ export interface GeneratedDevice {
   purchaseMasterId: number;
   serialNumber: string;
   model: string;
-  status: 'Available' | 'Rejected';
+  status: 'Active' | 'Rejected';
   rejectReason?: string;
 }
 
@@ -84,6 +84,8 @@ export interface FetchPurchasesParams {
   start?: number;
   length?: number;
   status?: string | number;
+  fromDate?: string;
+  toDate?: string;
   signal?: AbortSignal;
 }
 

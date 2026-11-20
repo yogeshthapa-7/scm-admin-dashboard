@@ -286,6 +286,10 @@ h1, h2, h3, h4, h5, h6,
   z-index: 1;
 }
 
+.ndp-input__popover.ndp-popover-above-navbar {
+  z-index: 10000;
+}
+
 .content-area.dark {
   background:
     radial-gradient(ellipse at 20% 20%, rgba(30, 35, 60, 0.4) 0%, transparent 60%),

@@ -1,0 +1,25 @@
+export interface DeviceItem {
+  id: number | string;
+  purchaseMasterId: number | string;
+  serialNo: string;
+  deviceStatusId: number | string;
+  purchaseRefNo?: string;
+  statusName?: string;
+  modelName?: string;
+}
+
+export type DeviceSavePayload = Omit<DeviceItem, 'id'> & { id?: number | string };
+
+export interface FetchDevicesParams {
+  purchaseMasterId?: number | string;
+  deviceStatusId?: number | string;
+  start?: number;
+  length?: number;
+  signal?: AbortSignal;
+}
+
+export interface FetchDevicesResult {
+  items: DeviceItem[];
+  total: number;
+  filtered: number;
+}
