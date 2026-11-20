@@ -281,58 +281,60 @@ export const CompanyInfo = () => {
         onSave={handleSaveCompany}
         initialValues={editingCompany ? { ...editingCompany } : undefined}
       >
-        <Form.Item
-          name="fullName"
-          label="Company Name"
-          rules={[{ required: true, message: 'Please enter company name' }]}
-        >
-          <Input placeholder="Enter company name" />
-        </Form.Item>
-        <Form.Item
-          name="email"
-          label="Email Address"
-          rules={[
-            { required: true, message: 'Please enter email' },
-            { type: 'email', message: 'Please enter a valid email' },
-          ]}
-        >
-          <Input placeholder="Enter email address" />
-        </Form.Item>
-        <Form.Item
-          name="contactNo"
-          label="Contact Number"
-          rules={[{ required: true, message: 'Please enter contact number' }]}
-        >
-          <Input placeholder="Enter contact number" />
-        </Form.Item>
-        <Form.Item
-          name="address"
-          label="Address"
-          rules={[{ required: true, message: 'Please enter address' }]}
-        >
-          <Input placeholder="Enter address" />
-        </Form.Item>
-        <Form.Item
-          name="websiteUrl"
-          label="Website URL"
-          rules={[{ required: true, message: 'Please enter website URL' }]}
-        >
-          <Input placeholder="https://example.com" />
-        </Form.Item>
-        <Form.Item
-          name="scmProviderId"
-          label="SCM Provider ID"
-          rules={[{ required: true, message: 'Please enter SCM provider ID' }]}
-        >
-          <Input placeholder="Enter provider ID" />
-        </Form.Item>
-        <Form.Item
-          name="make"
-          label="Make"
-          rules={[{ required: true, message: 'Please enter make' }]}
-        >
-          <Input placeholder="Enter make (e.g., Nepal)" />
-        </Form.Item>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Form.Item
+            name="fullName"
+            label="Company Name"
+            rules={[{ required: true, message: 'Please enter company name' }]}
+          >
+            <Input placeholder="Enter company name" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="Email Address"
+            rules={[
+              { required: true, message: 'Please enter email' },
+              { type: 'email', message: 'Please enter a valid email' },
+            ]}
+          >
+            <Input placeholder="Enter email address" />
+          </Form.Item>
+          <Form.Item
+            name="contactNo"
+            label="Contact Number"
+            rules={[{ required: true, message: 'Please enter contact number' }]}
+          >
+            <Input placeholder="Enter contact number" />
+          </Form.Item>
+          <Form.Item
+            name="address"
+            label="Address"
+            rules={[{ required: true, message: 'Please enter address' }]}
+          >
+            <Input placeholder="Enter address" />
+          </Form.Item>
+          <Form.Item
+            name="websiteUrl"
+            label="Website URL"
+            rules={[{ required: true, message: 'Please enter website URL' }]}
+          >
+            <Input placeholder="https://example.com" />
+          </Form.Item>
+          <Form.Item
+            name="scmProviderId"
+            label="SCM Provider ID"
+            rules={[{ required: true, message: 'Please enter SCM provider ID' }]}
+          >
+            <Input placeholder="Enter provider ID" />
+          </Form.Item>
+          <Form.Item
+            name="make"
+            label="Make"
+            rules={[{ required: true, message: 'Please enter make' }]}
+          >
+            <Input placeholder="Enter make (e.g., Nepal)" />
+          </Form.Item>
+        </div>
       </AppDrawer>
     </div>
   );

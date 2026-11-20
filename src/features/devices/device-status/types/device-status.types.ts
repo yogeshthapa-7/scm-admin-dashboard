@@ -1,13 +1,19 @@
 ﻿export interface DeviceStatusItem {
-  id: number;
+  id: number | string;
   statusName: string;
   code: string;
   colorCode: string;
   orderKey: number;
 }
 
-// Save payload matches current key/values used in DeviceStatus page
-export type DeviceStatusSavePayload = DeviceStatusItem;
+export interface DeviceStatusPayload {
+  statusName: string;
+  code: string;
+  colorCode: string;
+  orderKey: number;
+}
+
+export type DeviceStatusSavePayload = DeviceStatusPayload & { id?: number | string };
 
 export interface ServerSearchModel {
   draw?: number;

@@ -11,15 +11,15 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '@/context/ThemeContext';
-import { useState } from 'react';
-import scmLogo from '@/assets/images/scm_logo.png';
-import scmLogo1 from '@/assets/images/scm_logo_1.png';
-import evoluteLogo from '@/assets/images/evolute-logo.png';
+// import { useState } from 'react';
+import scmLogo from '@/assets/images/scm_logo_1.png';
+// import scmLogoFull from '@/assets/images/scm_logo.png';
+// import evoluteLogo from '@/assets/images/evolute-logo.png';
 
 const { Sider } = Layout;
 
-const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
-const DEFAULT_COMPANY = import.meta.env.VITE_DEFAULT_COMPANY || 'scm';
+// const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
+// const DEFAULT_COMPANY = import.meta.env.VITE_DEFAULT_COMPANY || 'scm';
 
 const menuItems = [
   { key: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
@@ -51,16 +51,17 @@ export const Sidebar = () => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
 
-  const savedCompany = localStorage.getItem("scm_company") || DEFAULT_COMPANY;
-  const [companyId] = useState<string>(savedCompany);
-  const company = COMPANIES.find((c: any) => c.id === companyId) || COMPANIES[0];
+  // const savedCompany = localStorage.getItem("scm_company") || DEFAULT_COMPANY;
+  // const [companyId] = useState<string>(savedCompany);
+  // const company = COMPANIES.find((c: any) => c.id === companyId) || COMPANIES[0];
 
-  const logoMap: Record<string, string> = {
-    'scm_logo.png': scmLogo as string,
-    'scm_logo_1.png': scmLogo1 as string,
-    'evolute-logo.png': evoluteLogo as string,
-  };
-  const companyLogo = logoMap[company.logo] || scmLogo;
+  // const logoMap: Record<string, string> = {
+  //   'scm_logo.png': scmLogoFull as string,
+  //   'scm_logo_1.png': scmLogo as string,
+  //   'evolute-logo.png': evoluteLogo as string,
+  // };
+  // const companyLogo = logoMap[company?.logo] || scmLogo;
+  const companyLogo = scmLogo;
 
   const selectedKey =
     menuItems
@@ -80,7 +81,7 @@ export const Sidebar = () => {
       }}
     >
       <div style={{ paddingTop: 0, paddingBottom: 8, textAlign: 'center' }}>
-        <img src={companyLogo} alt={company.name} style={{ height: 170, width: 300, objectFit: 'contain' }} />
+        <img src={companyLogo} alt="SCM" style={{ height: 170, width: 300, objectFit: 'contain' }} />
       </div>
       <div
         style={{

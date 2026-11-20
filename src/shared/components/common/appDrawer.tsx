@@ -1,5 +1,5 @@
-import { Drawer, Form, Button, message } from 'antd';
-import { useState, useEffect } from 'react';
+import { Drawer, Form, Button } from 'antd';
+import { useEffect, useState } from 'react';
 
 interface AppDrawerProps {
   open: boolean;
@@ -8,17 +8,30 @@ interface AppDrawerProps {
   confirmText?: string;
   width?: number | string;
   children: React.ReactNode;
-  onSave: (values: Record<string, unknown>) => void;
+  onSave: (values: Record<string, unknown>) => void | Promise<void>;
   initialValues?: Record<string, unknown>;
 }
 
-export const AppDrawer = ({ open, onClose, title = 'Add New Item', confirmText = 'Add', width = 700, children, onSave, initialValues }: AppDrawerProps) => {
+export const AppDrawer = ({
+  open,
+  onClose,
+  title = 'Add New Item',
+  confirmText = 'Add',
+  width = 700,
+  children,
+  onSave,
+  initialValues,
+}: AppDrawerProps) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open && initialValues) {
-      form.setFieldsValue(initialValues);
+    if (open) {
+      if (initialValues) {
+        form.setFieldsValue(initialValues);
+      } else {
+        form.resetFields();
+      }
     }
   }, [open, initialValues, form]);
 
@@ -26,13 +39,11 @@ export const AppDrawer = ({ open, onClose, title = 'Add New Item', confirmText =
     try {
       const values = await form.validateFields();
       setLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      onSave(values);
+      await onSave(values);
       form.resetFields();
       onClose();
-      message.success('Saved successfully');
-    } catch (error) {
-      // validation error
+    } catch {
+      // validation or save error (handled by caller)
     } finally {
       setLoading(false);
     }

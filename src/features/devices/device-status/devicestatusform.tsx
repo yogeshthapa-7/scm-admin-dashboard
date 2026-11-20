@@ -1,7 +1,4 @@
-import {
-  Form,
-  Input,
-} from 'antd';
+import { Form, Input } from 'antd';
 
 export const DeviceStatusFormItems = () => {
   return (
@@ -19,9 +16,7 @@ export const DeviceStatusFormItems = () => {
         label="Device Status Code"
         rules={[{ required: true, message: 'Please enter a code' }]}
       >
-        <Input
-          placeholder="e.g. ACT, INSTOCK, UR"
-        />
+        <Input placeholder="e.g. ACT, INSTOCK, UR" />
       </Form.Item>
 
       <Form.Item
@@ -29,21 +24,18 @@ export const DeviceStatusFormItems = () => {
         label="Color Code"
         rules={[{ required: true, message: 'Please select a color' }]}
         initialValue="#52c41a"
+        getValueFromEvent={(e) => (e as React.ChangeEvent<HTMLInputElement>).target.value}
       >
-        <input
-          type="color"
-          defaultValue="#52c41a"
-          className="w-full h-[38px] rounded-[8px] border-none p-0 cursor-pointer"
-          style={{ border: 'none', background: 'transparent', height: '38px', width: '100%', padding: 0 }}
-        />
+        <Input type="color" style={{ height: 38, width: '100%', padding: 4 }} />
       </Form.Item>
 
       <Form.Item
         name="orderKey"
         label="Order Key"
+        initialValue={0}
         rules={[
           {
-            validator: (_: any, value: any) => {
+            validator: (_: unknown, value: unknown) => {
               if (value === '' || value === undefined || value === null) {
                 return Promise.resolve();
               }
@@ -56,10 +48,7 @@ export const DeviceStatusFormItems = () => {
           },
         ]}
       >
-        <Input
-          type="number"
-          placeholder="e.g. 1, 2, 3"
-        />
+        <Input type="number" placeholder="e.g. 1, 2, 3" />
       </Form.Item>
     </>
   );

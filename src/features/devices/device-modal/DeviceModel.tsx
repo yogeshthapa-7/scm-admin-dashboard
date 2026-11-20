@@ -63,14 +63,18 @@ export const DeviceModel = () => {
       name: values.name as string,
     };
 
-    const res = await saveDeviceModel(payload);
-    if (res.success) {
+    try {
+      const res = await saveDeviceModel(payload);
+      if (!res.success) {
+        throw new Error(res.message || 'Failed to save model');
+      }
       message.success(editingModel ? 'Model updated successfully' : 'Model created successfully');
       setDrawerOpen(false);
       setEditingModel(null);
       loadData(page, pageSize);
-    } else {
-      message.error(res.message || 'Failed to save model');
+    } catch (error: any) {
+      message.error(error?.message || 'Failed to save model');
+      throw error;
     }
   };
 

@@ -36,11 +36,12 @@ export const toNepaliDate = (englishDate: string): string => {
 };
 
 export const formatDisplayDate = (englishDate: string): string => {
-  const [year, month, day] = englishDate.split('-');
-  if (!year || !month || !day) return englishDate;
+  if (!englishDate) return '';
   const nepali = toNepaliDate(englishDate);
-  const [bsYear, bsMonth, bsDay] = nepali.split('-');
-  return `${bsDay}/${bsMonth}/${bsYear}`;
+  if (!nepali) return englishDate;
+  const [year, month, day] = nepali.split('-');
+  if (!year || !month || !day) return englishDate;
+  return `${year}/${month.padStart(2, '0')}/${day.padStart(2, '0')}`;
 };
 
 export const parseDisplayDate = (nepaliDate: string): string => {

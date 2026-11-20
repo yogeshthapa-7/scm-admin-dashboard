@@ -24,13 +24,14 @@ export const DeviceStatus = () => {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | number | null>(null);
   const [editingStatus, setEditingStatus] = useState<DeviceStatusItem | null>(null);
   const [statuses, setStatuses] = useState<DeviceStatusItem[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async (targetPage: number, size: number) => {
     try {
@@ -39,35 +40,38 @@ export const DeviceStatus = () => {
       const res = await fetchDeviceStatus({ start, length: size });
       setStatuses(res.items);
       setTotal(res.total);
-    } catch {
-      message.error('Failed to load device status data');
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || error?.message || 'Failed to load device status data');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadData(page, pageSize);
+    void loadData(page, pageSize);
   }, [loadData, page, pageSize]);
 
   const handleSaveStatus = async (values: Record<string, unknown>) => {
-    const payload: DeviceStatusItem = {
-      id: editingStatus ? Number(editingStatus.id) : 0,
-      statusName: values.statusName as string,
-      code: values.code as string,
-      colorCode: values.colorCode as string,
+    const payload = {
+      ...(editingStatus?.id ? { id: editingStatus.id } : {}),
+      statusName: String(values.statusName ?? '').trim(),
+      code: String(values.code ?? '').trim(),
+      colorCode: String(values.colorCode ?? '#52c41a'),
       orderKey: values.orderKey === '' || values.orderKey == null ? 0 : Number(values.orderKey),
     };
 
-    const res = await saveDeviceStatus(payload);
-    if (res.success) {
-      message.success(editingStatus ? 'Device status updated' : 'Device status saved');
+    try {
+      const res = await saveDeviceStatus(payload);
+      message.success(res.message || (editingStatus ? 'Device status updated' : 'Device status created'));
       setDrawerOpen(false);
       setEditingStatus(null);
-      setPage(1);
-      loadData(1, pageSize);
-    } else {
-      message.error(res.message || 'Failed to save device status');
+      const nextPage = editingStatus ? page : 1;
+      setPage(nextPage);
+      await loadData(nextPage, pageSize);
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.response?.data?.title || error?.message || 'Failed to save device status';
+      message.error(msg);
+      throw error;
     }
   };
 
@@ -76,21 +80,24 @@ export const DeviceStatus = () => {
     setDrawerOpen(true);
   };
 
-  const handleDeleteConfirm = (id: number) => {
+  const handleDeleteConfirm = (id: string | number) => {
     setDeleteTargetId(id);
     setDeleteConfirmOpen(true);
   };
 
   const handleDeleteConfirmed = async () => {
     if (deleteTargetId === null) return;
-    const res = await deleteDeviceStatus(deleteTargetId);
-    if (res.success) {
-      message.success('Device status deleted');
+    try {
+      setDeleting(true);
+      const res = await deleteDeviceStatus(deleteTargetId);
+      message.success(res.message || 'Device status deleted');
       setDeleteConfirmOpen(false);
       setDeleteTargetId(null);
-      loadData(page, pageSize);
-    } else {
-      message.error(res.message || 'Failed to delete device status');
+      await loadData(page, pageSize);
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || error?.message || 'Failed to delete device status');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -112,7 +119,7 @@ export const DeviceStatus = () => {
       render: (text: string, record: DeviceStatusItem) => (
         <div
           style={{
-            backgroundColor: record.colorCode,
+            backgroundColor: record.colorCode || '#e5e7eb',
             padding: '4px 8px',
             borderRadius: 4,
             color: '#000',
@@ -130,6 +137,12 @@ export const DeviceStatus = () => {
       dataIndex: 'code',
       key: 'code',
       width: 120,
+    },
+    {
+      title: 'Order',
+      dataIndex: 'orderKey',
+      key: 'orderKey',
+      width: 100,
     },
     {
       title: 'Actions',
@@ -156,7 +169,7 @@ export const DeviceStatus = () => {
             Edit
           </Button>
           <Button
-            onClick={() => handleDeleteConfirm(Number(record.id))}
+            onClick={() => handleDeleteConfirm(record.id)}
             icon={<Delete size={16} />}
             style={{
               height: 32,
@@ -179,7 +192,6 @@ export const DeviceStatus = () => {
 
   return (
     <div>
-      {/* Header banner */}
       <Card
         style={{
           marginBottom: 32,
@@ -215,7 +227,6 @@ export const DeviceStatus = () => {
         </div>
       </Card>
 
-      {/* Device Status table */}
       <AppTable<DeviceStatusItem>
         columns={columns}
         dataSource={statuses}
@@ -226,7 +237,6 @@ export const DeviceStatus = () => {
         loading={loading}
       />
 
-      {/* Server-side Pagination */}
       <AppPagination
         current={page}
         pageSize={pageSize}
@@ -237,7 +247,6 @@ export const DeviceStatus = () => {
         }}
       />
 
-      {/* Delete confirmation */}
       <Modal
         open={deleteConfirmOpen}
         title="Delete Device Status"
@@ -248,6 +257,7 @@ export const DeviceStatus = () => {
         }}
         width={500}
         zIndex={1100}
+        confirmLoading={deleting}
         footer={[
           <Button
             key="cancel"
@@ -262,6 +272,7 @@ export const DeviceStatus = () => {
           <Button
             key="confirm"
             onClick={handleDeleteConfirmed}
+            loading={deleting}
             style={{ height: 38, borderRadius: 8, border: '1.5px solid #f5222d', background: '#f5222d', color: '#fff', fontWeight: 600, boxShadow: '0 4px 8px rgba(245,34,45,0.2)' }}
           >
             Confirm Delete
@@ -271,7 +282,6 @@ export const DeviceStatus = () => {
         Are you sure you want to delete this device status? This cannot be undone.
       </Modal>
 
-      {/* Add/Edit Device Status Drawer */}
       <AppDrawer
         open={drawerOpen}
         onClose={() => {
@@ -281,7 +291,16 @@ export const DeviceStatus = () => {
         title={editingStatus ? 'Edit Device Status' : 'Add Device Status'}
         confirmText={editingStatus ? 'Update Status' : 'Add Status'}
         onSave={handleSaveStatus}
-        initialValues={editingStatus ? { ...editingStatus } : undefined}
+        initialValues={
+          editingStatus
+            ? {
+                statusName: editingStatus.statusName,
+                code: editingStatus.code,
+                colorCode: editingStatus.colorCode || '#52c41a',
+                orderKey: editingStatus.orderKey ?? 0,
+              }
+            : { colorCode: '#52c41a', orderKey: 0 }
+        }
       >
         <DeviceStatusFormItems />
       </AppDrawer>

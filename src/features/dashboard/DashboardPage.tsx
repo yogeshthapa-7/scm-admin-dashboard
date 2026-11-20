@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useMemo, useState } from 'react';
+﻿import { useEffect, useRef, useMemo } from 'react';
 import { Typography, Row, Col, Card, Tag, Avatar, theme } from 'antd';
 import Highcharts from 'highcharts';
 import { Monitor, ShoppingCart, Building2, Users, Package } from 'lucide-react';
@@ -6,8 +6,7 @@ import { InventoryChart } from '@/shared/components/dashboard/InventoryChart';
 import { RecentActivities } from '@/shared/components/dashboard/RecentActivities';
 import { useTheme } from '@/context/ThemeContext';
 import { dashboardStats, inventoryChartData, reportSummary, users } from '@/mock-data';
-import scmLogo from '@/assets/images/scm_logo.png';
-import evoluteLogo from '@/assets/images/evolute-logo.png';
+import scmLogo from '@/assets/images/scm_logo_1.png';
 import { AppTable } from '@/shared/components/common/appTable';
 
 const { Title, Text } = Typography;
@@ -182,16 +181,18 @@ export const DashboardPage = () => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
 
-  const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
-  const savedCompany = localStorage.getItem('scm_company') || import.meta.env.VITE_DEFAULT_COMPANY || 'scm';
-  const [companyId] = useState<string>(savedCompany);
-  const company = COMPANIES.find((c: any) => c.id === companyId) || COMPANIES[0];
+  // const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
+  // const savedCompany = localStorage.getItem('scm_company') || import.meta.env.VITE_DEFAULT_COMPANY || 'scm';
+  // const [companyId] = useState<string>(savedCompany);
+  // const company = COMPANIES.find((c: any) => c.id === companyId) || COMPANIES[0];
 
-  const logoMap: Record<string, string> = {
-    'scm_logo.png': scmLogo as string,
-    'evolute-logo.png': evoluteLogo as string,
-  };
-  const companyLogo = logoMap[company.logo] || scmLogo;
+  // const logoMap: Record<string, string> = {
+  //   'scm_logo.png': scmLogo as string,
+  //   'evolute-logo.png': evoluteLogo as string,
+  // };
+  // const companyLogo = logoMap[company?.logo] || scmLogo;
+  const companyTitle = 'SCM Device Management Admin Portal';
+  const companyLogo = scmLogo;
 
   const greeting = (() => {
     const hour = new Date().getHours();
@@ -276,10 +277,10 @@ export const DashboardPage = () => {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src={companyLogo} alt={company.name} style={{ height: 40, width: 40, objectFit: 'contain' }} />
+            <img src={companyLogo} alt="SCM" style={{ height: 40, width: 40, objectFit: 'contain' }} />
             <div>
               <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 24 }}>
-                {company.title}
+                {companyTitle}
               </Title>
               <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14 }}>
                 {greeting} — {today}

@@ -3,25 +3,27 @@ import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/shared/components/common/ThemeToggle';
 import { useTheme } from '@/context/ThemeContext';
-import { useState } from 'react';
+import { logout, getAuthUser } from '@/auth/services/login.service';
+// import { useState } from 'react';
 
 const { Header } = Layout;
 
-const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
+// const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
 
 export const Navbar = () => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
   const navigate = useNavigate();
-  const [companyTitle] = useState<string>(() => {
-    const companyId = localStorage.getItem('scm_company') || 'scm';
-    const company = COMPANIES.find((c: any) => c.id === companyId);
-    return company?.title || 'SCM Device Management Admin Portal';
-  });
+  const user = getAuthUser();
+  // const [companyTitle] = useState<string>(() => {
+  //   const companyId = localStorage.getItem('scm_company') || 'scm';
+  //   const company = COMPANIES.find((c: any) => c.id === companyId);
+  //   return company?.title || 'SCM Device Management Admin Portal';
+  // });
+  const title = 'SCM Device Management Admin Portal';
 
   const handleLogout = () => {
-    localStorage.removeItem('scm_auth');
-    localStorage.removeItem('scm_company');
+    logout();
     navigate('/login', { replace: true });
   };
 
@@ -48,7 +50,7 @@ export const Navbar = () => {
           style={{ color: isDark ? '#e8e8e8' : '#172033' }}
           className="font-bold text-base"
         >
-          {companyTitle}
+          {title}
         </Typography.Text>
 
         <Space size={16}>
@@ -72,7 +74,7 @@ export const Navbar = () => {
           >
             <div className="flex items-center gap-2 cursor-pointer">
               <Avatar size={32} style={{ background: '#1677ff' }}>
-                A
+                {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
               </Avatar>
               <ChevronDown size={16} style={{ color: isDark ? '#aaa' : '#888' }} />
             </div>
