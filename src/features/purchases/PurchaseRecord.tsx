@@ -88,9 +88,9 @@ interface DeviceModelItem {
 
 const STATUS_LABELS: Record<PurchaseStatus, string> = {
   0: 'Deleted',
-  1: 'Draft Approved',
+  1: 'Approved',
   2: 'Draft',
-  3: 'Generated',
+  3: 'Device Generated',
   4: 'Rejected',
 };
 
@@ -106,6 +106,7 @@ const STORAGE_KEY_PURCHASES = 'scm_purchases';
 const STORAGE_KEY_DEVICES = 'scm_devices';
 const STORAGE_KEY_COMPANY_ID = 'scm_company';
 const STORAGE_KEY_DEVICE_MODELS = 'device_models';
+const STORAGE_KEY_USERS = 'scm_users';
 
 const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
 
@@ -141,6 +142,24 @@ const loadDeviceModels = (): DeviceModelItem[] => {
   try {
     const data = localStorage.getItem(STORAGE_KEY_DEVICE_MODELS);
     return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+};
+
+interface UserOption {
+  id: string | number;
+  name: string;
+}
+
+const loadUsers = (): UserOption[] => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY_USERS);
+    if (!data) return [];
+    const list = JSON.parse(data);
+    return Array.isArray(list)
+      ? list.map((u: any) => ({ id: u.id, name: u.name || '' })).filter((u: UserOption) => u.name)
+      : [];
   } catch {
     return [];
   }
@@ -207,6 +226,7 @@ export const PurchaseRecord = () => {
   const [company, setCompany] = useState<Company | null>(null);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem | null>(null);
   const [deviceModels, setDeviceModels] = useState<DeviceModelItem[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
@@ -217,6 +237,7 @@ export const PurchaseRecord = () => {
     setCompany(loadCompany());
     setCompanyInfo(loadCompanyInfo());
     setDeviceModels(loadDeviceModels());
+    setUsers(loadUsers());
   }, []);
 
   // Company info values come from the Company Info page (company_info localStorage)
@@ -413,10 +434,7 @@ export const PurchaseRecord = () => {
   };
 
   const handleDeletePurchase = (purchase: Purchase) => {
-    if (purchase.status === 3) {
-      alert('A generated purchase cannot be deleted from this screen.');
-      return;
-    }
+    if (![1, 2, 3, 4].includes(purchase.status)) return;
     const updated = purchases.map((p) =>
       p.id === purchase.id ? { ...p, status: 0 as PurchaseStatus } : p
     );
@@ -545,196 +563,169 @@ export const PurchaseRecord = () => {
       </div>
 
       {/* Purchase table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-gray-200 p-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Input
-              placeholder="Search reference, model, make..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              prefix={<Search />}
-              className="w-full sm:w-64 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Input
+            placeholder="Search reference, model, make..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            prefix={<Search />}
+            className="w-full sm:w-64 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
 
-            <Select
-              value={statusFilter}
-              onChange={(value) => {
-                setStatusFilter(value);
-                setPage(1);
-              }}
-              className="w-full sm:w-44 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-              <option value="all">All Status</option>
-              <option value="2">Draft</option>
-              <option value="1">Draft Approved</option>
-              <option value="3">Generated</option>
-              <option value="4">Rejected</option>
-            </Select>
-          </div>
+          <Select
+            value={statusFilter}
+            onChange={(value) => {
+              setStatusFilter(value);
+              setPage(1);
+            }}
+            className="w-full sm:w-44 h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          >
+            <option value="all">All Status</option>
+            <option value="2">Draft</option>
+            <option value="1">Draft Approved</option>
+            <option value="3">Generated</option>
+            <option value="4">Rejected</option>
+          </Select>
         </div>
+      </div>
 
-        <div className="overflow-x-auto">
-          <AppTable<Purchase>
-            columns={[
-              {
-                title: 'ID',
-                dataIndex: 'id',
-                key: 'id',
-                width: 100,
-                render: (text: number) => (
-                  <Text strong style={{ color: '#1677ff' }}>{text}</Text>
-                ),
-              },
-              {
-                title: 'Reference No.',
-                dataIndex: 'refNo',
-                key: 'refNo',
-                width: 140,
-                render: (text: string) => (
-                  <Text style={{ fontWeight: 600, color: '#1677ff' }}>{text}</Text>
-                ),
-              },
-              {
-                title: 'Transaction Date',
-                dataIndex: 'trnDate',
-                key: 'trnDate',
-                width: 120,
-                render: (text: string) => (
-                  <Text style={{ color: '#666' }}>{formatDisplayDate(text)}</Text>
-                ),
-              },
-              {
-                title: 'Make',
-                dataIndex: 'make',
-                key: 'make',
-                width: 140,
-                render: (text: string) => (
-                  <Text style={{ fontWeight: 600, color: '#172033' }}>{text}</Text>
-                ),
-              },
-              {
-                title: 'Device Model',
-                dataIndex: 'deviceModel',
-                key: 'deviceModel',
-                width: 160,
-                render: (text: string) => (
-                  <Text style={{ color: '#666' }}>{text}</Text>
-                ),
-              },
-              {
-                title: 'SN Configuration',
-                dataIndex: 'snPrefix',
-                key: 'snPrefix',
-                width: 140,
-                render: (text: string, record: Purchase) => (
-                  <Text
-                    style={{ fontWeight: 600, color: '#172033' }}
-                    title={`${record.snPadding} digits`}
+      <div className="overflow-x-auto">
+        <AppTable<Purchase>
+          columns={[
+            {
+              title: 'ID',
+              dataIndex: 'id',
+              key: 'id',
+              width: 100,
+              render: (text: number) => (
+                <Text strong style={{ color: '#1677ff' }}>{text}</Text>
+              ),
+            },
+            {
+              title: 'Reference No.',
+              dataIndex: 'refNo',
+              key: 'refNo',
+              width: 140,
+              render: (text: string) => (
+                <Text style={{ fontWeight: 600, color: '#1677ff' }}>{text}</Text>
+              ),
+            },
+            {
+              title: 'Transaction Date',
+              dataIndex: 'trnDate',
+              key: 'trnDate',
+              width: 120,
+              render: (text: string) => (
+                <Text style={{ color: '#666' }}>{formatDisplayDate(text)}</Text>
+              ),
+            },
+            {
+              title: 'Make',
+              dataIndex: 'make',
+              key: 'make',
+              width: 140,
+              render: (text: string) => (
+                <Text style={{ fontWeight: 600, color: '#172033' }}>{text}</Text>
+              ),
+            },
+            {
+              title: 'Device Model',
+              dataIndex: 'deviceModel',
+              key: 'deviceModel',
+              width: 160,
+              render: (text: string) => (
+                <Text style={{ color: '#666' }}>{text}</Text>
+              ),
+            },
+            {
+              title: 'SN Configuration',
+              dataIndex: 'snPrefix',
+              key: 'snPrefix',
+              width: 140,
+              render: (text: string, record: Purchase) => (
+                <Text
+                  style={{ fontWeight: 600, color: '#172033' }}
+                  title={`${record.snPadding} digits`}
+                >
+                  {text}-{String(record.snStart ?? 1).padStart(record.snPadding, '0')}
+                </Text>
+              ),
+            },
+            {
+              title: 'Total Items',
+              dataIndex: 'totalItem',
+              key: 'totalItem',
+              width: 100,
+              render: (text: number) => (
+                <Text style={{ fontWeight: 600, color: '#172033' }}>{text}</Text>
+              ),
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              key: 'status',
+              width: 120,
+              render: (status: PurchaseStatus) => (
+                <Tag className={STATUS_STYLES[status]} style={{ fontWeight: 600 }}>
+                  {STATUS_LABELS[status]}
+                </Tag>
+              ),
+            },
+            {
+              title: 'Actions',
+              dataIndex: 'actions',
+              key: 'actions',
+              width: 220,
+              fixed: 'right' as const,
+              render: (_: any, record: Purchase) => (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px' }}>
+                  <Button
+                    onClick={() => {
+                      setViewingPurchase(record);
+                      setFormOpen(true);
+                    }}
+                    icon={<UserCheck size={14} />}
+                    style={{
+                      height: 32,
+                      borderRadius: 6,
+                      border: '1.5px solid #d1d5db',
+                      background: '#fff',
+                      color: '#4b5563',
+                      fontWeight: 500,
+                      fontSize: 14,
+                      padding: '0 12px',
+                      width: '100%',
+                      justifyContent: 'center',
+                    }}
                   >
-                    {text}-{String(record.snStart ?? 1).padStart(record.snPadding, '0')}
-                  </Text>
-                ),
-              },
-              {
-                title: 'Total Items',
-                dataIndex: 'totalItem',
-                key: 'totalItem',
-                width: 100,
-                render: (text: number) => (
-                  <Text style={{ fontWeight: 600, color: '#172033' }}>{text}</Text>
-                ),
-              },
-              {
-                title: 'Status',
-                dataIndex: 'status',
-                key: 'status',
-                width: 120,
-                render: (status: PurchaseStatus) => (
-                  <Tag className={STATUS_STYLES[status]} style={{ fontWeight: 600 }}>
-                    {STATUS_LABELS[status]}
-                  </Tag>
-                ),
-              },
-              {
-                title: 'Actions',
-                dataIndex: 'actions',
-                key: 'actions',
-                width: 220,
-                fixed: 'right' as const,
-                render: (_: any, record: Purchase) => (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px' }}>
-                    <Button
-                      onClick={() => {
-                        setViewingPurchase(record);
-                        setFormOpen(true);
-                      }}
-                      icon={<UserCheck size={14} />}
-                      style={{
-                        height: 32,
-                        borderRadius: 6,
-                        border: '1.5px solid #d1d5db',
-                        background: '#fff',
-                        color: '#4b5563',
-                        fontWeight: 500,
-                        fontSize: 14,
-                        padding: '0 12px',
-                        width: '100%',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      View
-                    </Button>
+                    View
+                  </Button>
 
-                    {record.status === 2 && (
-                      <>
-                        <Button
-                          onClick={() => handleEditPurchase(record)}
-                          icon={<Edit size={14} />}
-                          style={{
-                            height: 32,
-                            borderRadius: 6,
-                            border: '1.5px solid #1677ff',
-                            background: '#1677ff',
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: 14,
-                            padding: '0 12px',
-                            boxShadow: '0 4px 8px rgba(22,119,255,0.2)',
-                            width: '100%',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setDeleteTargetPurchase(record);
-                            setDeleteConfirmOpen(true);
-                          }}
-                          icon={<Trash2 size={14} />}
-                          style={{
-                            height: 32,
-                            borderRadius: 6,
-                            border: '1.5px solid #f5222d',
-                            background: '#f5222d',
-                            color: '#fff',
-                            fontWeight: 600,
-                            fontSize: 14,
-                            padding: '0 12px',
-                            boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-                            width: '100%',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </>
-                    )}
-
-                    {record.status === 1 && (
+                  {record.status === 2 && (
+                    <>
+                      <Button
+                        onClick={() => handleEditPurchase(record)}
+                        icon={<Edit size={14} />}
+                        style={{
+                          height: 32,
+                          borderRadius: 6,
+                          border: '1.5px solid #1677ff',
+                          background: '#1677ff',
+                          color: '#fff',
+                          fontWeight: 600,
+                          fontSize: 14,
+                          padding: '0 12px',
+                          boxShadow: '0 4px 8px rgba(22,119,255,0.2)',
+                          width: '100%',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        Edit
+                      </Button>
                       <Button
                         onClick={() => {
                           setDeleteTargetPurchase(record);
@@ -757,33 +748,58 @@ export const PurchaseRecord = () => {
                       >
                         Delete
                       </Button>
-                    )}
-                  </div>
-                ),
-              },
-            ]}
-            dataSource={filteredPurchases}
-            rowKey="id"
-            title="Purchase Records"
-            pagination={false}
-            loading={loading}
-            scroll={{ x: 'max-content' }}
-          />
-        </div>
+                    </>
+                  )}
 
-        <AppPagination
-          current={page}
-          pageSize={pageSize}
-          total={total}
-          onChange={(newPage, newPageSize) => {
-            setPage(newPage);
-            setPageSize(newPageSize);
-          }}
+                  {[1, 3, 4].includes(record.status) && (
+                    <Button
+                      onClick={() => {
+                        setDeleteTargetPurchase(record);
+                        setDeleteConfirmOpen(true);
+                      }}
+                      icon={<Trash2 size={14} />}
+                      style={{
+                        height: 32,
+                        borderRadius: 6,
+                        border: '1.5px solid #f5222d',
+                        background: '#f5222d',
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: 14,
+                        padding: '0 12px',
+                        boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
+                        width: '100%',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+          dataSource={filteredPurchases}
+          rowKey="id"
+          title="Purchase Records"
+          pagination={false}
+          loading={loading}
+          scroll={{ x: 'max-content' }}
         />
+      </div>
 
-        <div className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
-          Showing {filteredPurchases.length} of {counts.total} purchases
-        </div>
+      <AppPagination
+        current={page}
+        pageSize={pageSize}
+        total={total}
+        onChange={(newPage, newPageSize) => {
+          setPage(newPage);
+          setPageSize(newPageSize);
+        }}
+      />
+
+      <div className="mt-2 text-xs text-gray-500">
+        Showing {filteredPurchases.length} of {counts.total} purchases
       </div>
 
       {/* Purchase form drawer */}
@@ -948,11 +964,15 @@ export const PurchaseRecord = () => {
                   </div>
                   <div>
                     <p className="mb-1 text-xs font-medium text-gray-600">Rejected By</p>
-                    <Input
-                      value={rejectFormBy}
-                      onChange={(e) => setRejectFormBy(e.target.value)}
-                      placeholder="Enter name"
-                      className="h-[38px] rounded-[8px] border-[1.5px] border-gray-300"
+                    <Select
+                      value={rejectFormBy || undefined}
+                      onChange={(val) => setRejectFormBy(String(val))}
+                      placeholder="Select user"
+                      className="w-full h-[38px]"
+                      showSearch
+                      optionFilterProp="label"
+                      allowClear
+                      options={users.map((u) => ({ label: u.name, value: u.name }))}
                     />
                   </div>
                   <div className="sm:col-span-2">

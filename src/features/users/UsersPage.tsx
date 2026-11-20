@@ -243,7 +243,7 @@ export const UsersPage = () => {
   ];
 
   const userFormFields = (
-    <>
+    <div className="grid gap-4 sm:grid-cols-2">
       <Form.Item
         name="name"
         label="Full Name"
@@ -266,7 +266,22 @@ export const UsersPage = () => {
       <Form.Item
         name="password"
         label="Password"
-        rules={[{ required: true, message: 'Please enter password' }]}
+        rules={[
+          { required: true, message: 'Please enter password' },
+          { min: 8, message: 'Password must be at least 8 characters' },
+          {
+            pattern: /[A-Z]/,
+            message: 'Password must contain at least one uppercase letter',
+          },
+          {
+            pattern: /[a-z]/,
+            message: 'Password must contain at least one lowercase letter',
+          },
+          {
+            pattern: /\d/,
+            message: 'Password must contain at least one number',
+          },
+        ]}
       >
         <Input.Password placeholder="Enter password" />
       </Form.Item>
@@ -282,7 +297,7 @@ export const UsersPage = () => {
               if (!value || getFieldValue('password') === value) {
                 return Promise.resolve();
               }
-              return Promise.reject(new Error('Confirm password does not match'));
+              return Promise.reject(new Error('Passwords do not match'));
             },
           }),
         ]}
@@ -319,7 +334,7 @@ export const UsersPage = () => {
           placeholder="Select status"
         />
       </Form.Item>
-    </>
+    </div>
   );
 
   return (
