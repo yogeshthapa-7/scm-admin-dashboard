@@ -205,20 +205,22 @@ export const CompanyInfo = () => {
               Manage company details and configuration
             </Text>
           </div>
-          <Button
-            onClick={() => {
-              setEditingCompany(null);
-              setDrawerOpen(true);
-            }}
-            icon={<Plus size={18} />}
-            className="
-              h-[38px] rounded-[8px] border-[1.5px] border-white/[0.3]
-              bg-white/[0.15] text-white font-medium px-5
-              hover:bg-white/[0.25] transition-all
-            "
-          >
-            Add Company
-          </Button>
+          {companies.length === 0 && (
+            <Button
+              onClick={() => {
+                setEditingCompany(null);
+                setDrawerOpen(true);
+              }}
+              icon={<Plus size={18} />}
+              className="
+                h-[38px] rounded-[8px] border-[1.5px] border-white/[0.3]
+                bg-white/[0.15] text-white font-medium px-5
+                hover:bg-white/[0.25] transition-all
+              "
+            >
+              Add Company
+            </Button>
+          )}
         </div>
       </Card>
 

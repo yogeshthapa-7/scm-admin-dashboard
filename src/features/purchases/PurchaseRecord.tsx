@@ -264,6 +264,8 @@ export const PurchaseRecord = () => {
   const [deleteTargetPurchase, setDeleteTargetPurchase] = useState<Purchase | null>(null);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [approveTargetPurchase, setApproveTargetPurchase] = useState<Purchase | null>(null);
+  const [showGenerateForm, setShowGenerateForm] = useState(false);
+  const [generatingDevices, setGeneratingDevices] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectFormDate, setRejectFormDate] = useState('');
   const [rejectFormBy, setRejectFormBy] = useState('');
@@ -393,44 +395,66 @@ export const PurchaseRecord = () => {
     setFormOpen(true);
   };
 
-  const handleGenerateDevices = (purchase: Purchase) => {
-    if (purchase.status !== 1) return;
-
+  const getGenerationInfo = (purchase: Purchase) => {
+    const snStart = purchase.snStart ?? 1;
+    const totalItem = Number(purchase.totalItem || 0);
+    const first = generateSerialNumber(purchase.snPrefix, purchase.snPadding, snStart);
+    const last = generateSerialNumber(purchase.snPrefix, purchase.snPadding, snStart + Math.max(totalItem, 1) - 1);
+    const serials = Array.from({ length: totalItem }, (_, index) =>
+      generateSerialNumber(purchase.snPrefix, purchase.snPadding, snStart + index)
+    );
     const alreadyGenerated = devices.some((d) => d.purchaseMasterId === purchase.id);
-    if (alreadyGenerated) {
-      alert('Devices have already been generated for this purchase.');
-      return;
-    }
 
-    if (!window.confirm(`Generate ${purchase.totalItem} devices for ${purchase.refNo}?`)) return;
+    const taken = new Set<string>();
+    devices.forEach((d) => {
+      if (d.purchaseMasterId !== purchase.id) taken.add(d.serialNumber);
+    });
+    purchases.forEach((p) => {
+      if (p.status === 0 || p.id === purchase.id) return;
+      const pStart = p.snStart ?? 1;
+      for (let i = 0; i < p.totalItem; i += 1) {
+        taken.add(generateSerialNumber(p.snPrefix, p.snPadding, pStart + i));
+      }
+    });
+    const conflictSerial = serials.find((serial) => taken.has(serial));
+
+    return { snStart, totalItem, first, last, serials, alreadyGenerated, conflictSerial };
+  };
+
+  const confirmGenerateDevices = async (purchase: Purchase) => {
+    if (purchase.status !== 1 || generatingDevices) return;
+
+    const info = getGenerationInfo(purchase);
+    if (info.alreadyGenerated || info.conflictSerial || info.totalItem <= 0) return;
+
+    setGeneratingDevices(true);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const newDevices: Device[] = info.serials.map((serialNumber, index) => ({
+      id: Date.now() + index,
+      purchaseMasterId: purchase.id,
+      serialNumber,
+      model: purchase.deviceModel,
+      status: 'Available',
+    }));
 
     setDevices((prev) => {
-      const newDevices: Device[] = Array.from(
-        { length: purchase.totalItem },
-        (_, index) => ({
-          id: Math.max(0, ...prev.map((d) => d.id)) + index + 1,
-          purchaseMasterId: purchase.id,
-          serialNumber: generateSerialNumber(purchase.snPrefix, purchase.snPadding, (purchase.snStart ?? 1) + index),
-          model: purchase.deviceModel,
-          status: 'Available',
-        })
-      );
       const newDeviceList = [...prev, ...newDevices];
       saveDevices(newDeviceList);
       return newDeviceList;
     });
 
+    const generated: Purchase = { ...purchase, status: 3 as PurchaseStatus };
     setPurchases((prev) => {
-      const updated = prev.map((p) =>
-        p.id === purchase.id ? { ...p, status: 3 as PurchaseStatus } : p
-      );
+      const updated = prev.map((p) => (p.id === purchase.id ? generated : p));
       savePurchases(updated);
       return updated;
     });
 
-    const generated = { ...purchase, status: 3 as PurchaseStatus };
     setSelectedPurchase((prev) => (prev?.id === purchase.id ? generated : prev));
     setViewingPurchase((prev) => (prev?.id === purchase.id ? generated : prev));
+    setGeneratingDevices(false);
+    setShowGenerateForm(false);
   };
 
   const handleDeletePurchase = (purchase: Purchase) => {
@@ -810,6 +834,7 @@ export const PurchaseRecord = () => {
           setEditingPurchase(null);
           setViewingPurchase(null);
           setShowRejectForm(false);
+          setShowGenerateForm(false);
           setRejectFormDate('');
           setRejectFormBy('');
           setRejectFormReason('');
@@ -883,7 +908,7 @@ export const PurchaseRecord = () => {
                 )}
                 {viewingPurchase.status === 1 && (
                   <Button
-                    onClick={() => handleGenerateDevices(viewingPurchase)}
+                    onClick={() => setShowGenerateForm((v) => !v)}
                     icon={<RefreshCw size={14} />}
                     style={{
                       height: 32,
@@ -1020,6 +1045,132 @@ export const PurchaseRecord = () => {
                 </div>
               </div>
             )}
+
+            {showGenerateForm && viewingPurchase.status === 1 && (() => {
+              const info = getGenerationInfo(viewingPurchase);
+              const canGenerate = !info.alreadyGenerated && !info.conflictSerial && info.totalItem > 0;
+              const preview = info.serials.slice(0, 8);
+              const remaining = Math.max(info.serials.length - preview.length, 0);
+              const isSingle = info.totalItem === 1;
+
+              return (
+                <div className="rounded-xl border border-blue-200 bg-white p-4 space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">Generate Devices</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Review the details below, then confirm to create device records for this purchase.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg bg-gray-50 p-3">
+                      <p className="text-xs text-gray-500">Device Model</p>
+                      <p className="mt-1 text-sm font-medium text-gray-800">{viewingPurchase.deviceModel || '—'}</p>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 p-3">
+                      <p className="text-xs text-gray-500">Company / Make</p>
+                      <p className="mt-1 text-sm font-medium text-gray-800">
+                        {viewingPurchase.companyName || '—'}{viewingPurchase.make ? ` · ${viewingPurchase.make}` : ''}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2 rounded-lg border border-blue-100 bg-blue-50 p-3">
+                      <p className="text-xs text-blue-700">Devices to create</p>
+                      <p className="mt-1 text-base font-semibold text-blue-800">
+                        {info.totalItem} device{isSingle ? '' : 's'} will be generated and marked as Available
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <h4 className="mb-3 font-semibold text-gray-800">Serial Number Assignment</h4>
+                    <div className="grid gap-3 sm:grid-cols-3 mb-3">
+                      <div>
+                        <p className="text-xs text-gray-500">Prefix</p>
+                        <p className="mt-1 text-sm font-medium text-gray-800">{viewingPurchase.snPrefix}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Number padding</p>
+                        <p className="mt-1 text-sm font-medium text-gray-800">{viewingPurchase.snPadding} digits</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Starting number</p>
+                        <p className="mt-1 text-sm font-medium text-gray-800">{info.snStart}</p>
+                      </div>
+                    </div>
+
+                    {isSingle ? (
+                      <div className="rounded-lg bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500">Serial number</p>
+                        <p className="mt-1 font-mono text-base font-semibold text-gray-800">{info.first}</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-lg bg-gray-50 p-3">
+                            <p className="text-xs text-gray-500">First serial</p>
+                            <p className="mt-1 font-mono font-semibold text-gray-800">{info.first}</p>
+                          </div>
+                          <div className="rounded-lg bg-gray-50 p-3">
+                            <p className="text-xs text-gray-500">Last serial</p>
+                            <p className="mt-1 font-mono font-semibold text-gray-800">{info.last}</p>
+                          </div>
+                        </div>
+                        {preview.length > 0 && (
+                          <div className="mt-3">
+                            <p className="mb-1 text-xs text-gray-500">Serials in this batch</p>
+                            <p className="text-sm text-gray-700 font-mono break-words">
+                              {preview.join(', ')}{remaining > 0 ? `, … +${remaining} more` : ''}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                      After confirmation, this purchase will be marked as <strong>Device Generated</strong>.
+                    </div>
+                    {info.alreadyGenerated && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                        Devices have already been generated for this purchase.
+                      </div>
+                    )}
+                    {!info.alreadyGenerated && info.conflictSerial && (
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                        Serial conflict detected: <strong>{info.conflictSerial}</strong> already exists. Resolve the conflict before generating.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      onClick={() => setShowGenerateForm(false)}
+                      disabled={generatingDevices}
+                      style={{ height: 36, borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', color: '#4b5563', fontWeight: 500 }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => confirmGenerateDevices(viewingPurchase)}
+                      loading={generatingDevices}
+                      disabled={!canGenerate}
+                      style={{
+                        height: 36,
+                        borderRadius: 8,
+                        border: '1.5px solid #52c41a',
+                        background: canGenerate ? '#52c41a' : '#b7eb8f',
+                        color: '#fff',
+                        fontWeight: 600,
+                        boxShadow: canGenerate ? '0 4px 8px rgba(82,196,26,0.2)' : 'none',
+                      }}
+                    >
+                      Confirm &amp; Generate
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {viewingPurchase.status === 3 && (
               <div>
