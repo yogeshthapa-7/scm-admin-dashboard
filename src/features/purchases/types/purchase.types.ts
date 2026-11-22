@@ -82,7 +82,7 @@ export type { ApiListResponse, SelectListItem, ServerSearchModel };
 
 export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   0: 'Deleted',
-  1: 'Draft Approved',
+  1: 'Approved',
   2: 'Draft',
   3: 'Generated',
   4: 'Rejected',

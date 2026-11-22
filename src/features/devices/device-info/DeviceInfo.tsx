@@ -176,12 +176,12 @@ export const DeviceInfo = () => {
           : undefined
       }
     >
-      <Form.Item name="purchaseMasterId" label="Purchase Reference No." rules={[{ required: true, message: 'Please select purchase reference no.' }]}>
+      <Form.Item name="purchaseMasterId" label="Purchase Master Id" rules={[{ required: true, message: 'Please select purchase master id' }]}>
         <Select
           showSearch
           optionFilterProp="label"
-          options={purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))}
-          placeholder="Select purchase reference no."
+          options={purchases.map((item) => ({ label: String(item.id), value: String(item.id) }))}
+          placeholder="Select purchase master id"
         />
       </Form.Item>
       <Form.Item name="serialNo" label="Serial No." rules={[{ required: true, message: 'Please enter serial number' }]}>

@@ -27,7 +27,6 @@ function toItem(raw: any): Purchase {
         approved: 1,
         draft: 2,
         generated: 3,
-        'device generated': 3,
         rejected: 4,
       } as Record<string, number>)[rawStatus.trim().toLowerCase()]
     : rawStatus;

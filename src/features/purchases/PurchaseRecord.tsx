@@ -130,7 +130,7 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
   0: 'Deleted',
   1: 'Approved',
   2: 'Draft',
-  3: 'Device Generated',
+  3: 'Generated',
   4: 'Rejected',
 };
 
