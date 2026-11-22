@@ -2,12 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
 import { Delete, Edit, Plus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer } from '@/shared/components/common/appDrawer';
-import { AppTable } from '@/shared/components/common/appTable';
-import { AppPagination } from '@/shared/components/common/AppPagination';
-import { fetchDevices, saveDevice, deleteDevice } from './services/device.service';
-import { fetchPurchases } from '../../purchases/services/purchase-master.service';
-import { fetchDeviceStatus } from '../device-status/services/device-status.service';
+import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
+import { deleteDevice, fetchDevices, saveDevice } from './services/device.service';
+import { fetchPurchases } from '@/features/purchases/services/purchase-master.service';
+import { fetchDeviceStatus } from '@/features/devices/device-status/services/device-status.service';
 import type { DeviceItem, DeviceSavePayload } from './types/device.types';
 
 const { Title, Text } = Typography;

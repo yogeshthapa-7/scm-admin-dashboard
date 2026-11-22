@@ -1,24 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  Typography,
-  Button,
-  Input,
-  Form,
-  Modal,
-  Space,
-  message,
-} from 'antd';
-import { Plus, Edit, Delete } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Button, Card, Form, Input, Modal, Space, Typography, message } from 'antd';
+import { Delete, Edit, Plus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer } from '@/shared/components/common/appDrawer';
-import { AppTable } from '@/shared/components/common/appTable';
-import { AppPagination } from '@/shared/components/common/AppPagination';
-import {
-  fetchDeviceModels,
-  saveDeviceModel,
-  deleteDeviceModel,
-} from './services/device-model.service';
+import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
+import { deleteDeviceModel, fetchDeviceModels, saveDeviceModel } from './services/device-model.service';
 import type { DeviceModelItem } from './types/device-model.types';
 
 const { Title, Text } = Typography;

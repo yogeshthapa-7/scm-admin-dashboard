@@ -1,4 +1,6 @@
-﻿export type PurchaseStatus = 0 | 1 | 2 | 3 | 4;
+﻿import type { ApiListResponse, PaginatedResult, SelectListItem, ServerSearchModel } from '@/shared/types/api.types';
+
+export type PurchaseStatus = 0 | 1 | 2 | 3 | 4;
 
 export interface Purchase {
   id: number;
@@ -53,13 +55,6 @@ export interface PurchaseFormProps {
 
 export type PurchaseSavePayload = Purchase;
 
-export interface ServerSearchModel {
-  draw?: number;
-  start?: number;
-  length?: number;
-  search?: { value: string; regex: string };
-}
-
 export interface PurchaseServerSearchParam {
   Status?: string | number;
   CompanyInfoId?: string | number;
@@ -69,14 +64,6 @@ export interface PurchaseServerSearchParam {
 export interface PurchaseServerSearchRequest {
   model: ServerSearchModel;
   param?: PurchaseServerSearchParam;
-}
-
-export interface ApiListResponse<T> {
-  draw?: number;
-  recordsTotal?: number;
-  recordsFiltered?: number;
-  data?: T[];
-  [key: string]: unknown;
 }
 
 export interface FetchPurchasesParams {
@@ -89,17 +76,9 @@ export interface FetchPurchasesParams {
   signal?: AbortSignal;
 }
 
-export interface FetchPurchasesResult {
-  items: Purchase[];
-  total: number;
-  filtered: number;
-}
+export type FetchPurchasesResult = PaginatedResult<Purchase>;
 
-export interface SelectListItem {
-  label: string;
-  value: string | number;
-  [key: string]: unknown;
-}
+export type { ApiListResponse, SelectListItem, ServerSearchModel };
 
 export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   0: 'Deleted',

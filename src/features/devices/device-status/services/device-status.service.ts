@@ -9,13 +9,13 @@ import type {
   SelectListItem,
 } from '../types/device-status.types';
 
-const BASE_URL = 'http://scmdevice.himalayankasturi.com.np/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 export const RESOURCE_PATH = '/DeviceStatus';
-export const API_URL = `${BASE_URL}${RESOURCE_PATH}/GetAllDeviceStatus`;
-export const GET_BY_ID_URL = `${BASE_URL}${RESOURCE_PATH}/GetDeviceStatusById`;
-export const CREATE_URL = `${BASE_URL}${RESOURCE_PATH}/CreateDeviceStatus`;
-export const UPDATE_URL = `${BASE_URL}${RESOURCE_PATH}/UpdateDeviceStatus`;
-export const DELETE_URL = `${BASE_URL}${RESOURCE_PATH}/DeleteDeviceStatus`;
+export const API_URL = `${API_BASE_URL}${RESOURCE_PATH}/GetAllDeviceStatus`;
+export const GET_BY_ID_URL = `${API_BASE_URL}${RESOURCE_PATH}/GetDeviceStatusById`;
+export const CREATE_URL = `${API_BASE_URL}${RESOURCE_PATH}/CreateDeviceStatus`;
+export const UPDATE_URL = `${API_BASE_URL}${RESOURCE_PATH}/UpdateDeviceStatus`;
+export const DELETE_URL = `${API_BASE_URL}${RESOURCE_PATH}/DeleteDeviceStatus`;
 
 function toItem(raw: any): DeviceStatusItem {
   return {

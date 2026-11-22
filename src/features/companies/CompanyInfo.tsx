@@ -1,23 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  Typography,
-  Button,
-  Input,
-  Form,
-  Modal,
-  Space,
-  message,
-} from 'antd';
-import { Plus, Edit, Delete } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Button, Card, Form, Input, Modal, Space, Typography, message } from 'antd';
+import { Delete, Edit, Plus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer } from '@/shared/components/common/appDrawer';
-import { AppTable } from '@/shared/components/common/appTable';
-import {
-  fetchCompanyInfo,
-  saveCompanyInfo,
-  deleteCompanyInfo,
-} from './services/company-info.service';
+import { AppDrawer, AppTable } from '@/shared/components/common';
+import { deleteCompanyInfo, fetchCompanyInfo, saveCompanyInfo } from './services/company-info.service';
 import type { CompanyInfoItem } from './types/company-info.types';
 
 const { Title, Text } = Typography;
@@ -61,14 +47,18 @@ export const CompanyInfo = () => {
       make: values.make as string,
     };
 
-    const res = await saveCompanyInfo(payload);
-    if (res.success) {
-      message.success(editingCompany ? 'Company profile updated' : 'Company profile created');
+    try {
+      const res = await saveCompanyInfo(payload);
+      if (!res.success) {
+        throw new Error(res.message || 'Failed to save company profile');
+      }
+      message.success(res.message || (editingCompany ? 'Company profile updated' : 'Company profile created'));
       setDrawerOpen(false);
       setEditingCompany(null);
-      loadData();
-    } else {
-      message.error(res.message || 'Failed to save company profile');
+      await loadData();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || error?.message || 'Failed to save company profile');
+      throw error;
     }
   };
 

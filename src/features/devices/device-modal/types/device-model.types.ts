@@ -1,3 +1,5 @@
+import type { ApiListResponse, PaginatedResult, SelectListItem, ServerSearchModel } from '@/shared/types/api.types';
+
 export interface DeviceModelItem {
   id: number | string;
   name: string;
@@ -5,24 +7,9 @@ export interface DeviceModelItem {
 
 export type DeviceModelSavePayload = DeviceModelItem;
 
-export interface ServerSearchModel {
-  draw?: number;
-  start?: number;
-  length?: number;
-  search?: { value: string; regex: string };
-}
-
 export interface DeviceModelServerSearchRequest {
   model: ServerSearchModel;
   param?: Record<string, unknown>;
-}
-
-export interface ApiListResponse<T> {
-  draw?: number;
-  recordsTotal?: number;
-  recordsFiltered?: number;
-  data?: T[];
-  [key: string]: unknown;
 }
 
 export interface FetchDeviceModelsParams {
@@ -32,14 +19,6 @@ export interface FetchDeviceModelsParams {
   signal?: AbortSignal;
 }
 
-export interface FetchDeviceModelsResult {
-  items: DeviceModelItem[];
-  total: number;
-  filtered: number;
-}
+export type FetchDeviceModelsResult = PaginatedResult<DeviceModelItem>;
 
-export interface SelectListItem {
-  label: string;
-  value: string | number;
-  [key: string]: unknown;
-}
+export type { ApiListResponse, SelectListItem, ServerSearchModel };

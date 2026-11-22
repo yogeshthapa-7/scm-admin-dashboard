@@ -2,12 +2,12 @@
 import api from '@/interceptors/interceptors';
 import type { DeviceItem, DeviceSavePayload, FetchDevicesParams, FetchDevicesResult } from '../types/device.types';
 
-const BASE_URL = 'http://scmdevice.himalayankasturi.com.np/api';
-export const API_URL = `${BASE_URL}/Device/GetAllDevice`;
-export const GET_BY_ID_URL = `${BASE_URL}/Device/GetDeviceById`;
-export const CREATE_URL = `${BASE_URL}/Device/CreateDevice`;
-export const UPDATE_URL = `${BASE_URL}/Device/UpdateDevice`;
-export const DELETE_URL = `${BASE_URL}/Device/DeleteDevice`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+export const API_URL = `${API_BASE_URL}/Device/GetAllDevice`;
+export const GET_BY_ID_URL = `${API_BASE_URL}/Device/GetDeviceById`;
+export const CREATE_URL = `${API_BASE_URL}/Device/CreateDevice`;
+export const UPDATE_URL = `${API_BASE_URL}/Device/UpdateDevice`;
+export const DELETE_URL = `${API_BASE_URL}/Device/DeleteDevice`;
 const GENERATED_DEVICES_KEY = 'generated_devices_fallback';
 
 function toItem(raw: any): DeviceItem {

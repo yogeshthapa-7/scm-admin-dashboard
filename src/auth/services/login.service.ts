@@ -8,7 +8,7 @@ import {
   getAuthUser as readAuthUser,
 } from './auth-session';
 
-const AUTH_BASE_URL = 'http://scmdevice.himalayankasturi.com.np/api/Auth';
+const AUTH_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/Auth`;
 const LOGIN_URL = `${AUTH_BASE_URL}/login`;
 const REGISTER_URL = `${AUTH_BASE_URL}/register`;
 

@@ -10,13 +10,13 @@ import type {
   SelectListItem,
 } from '../types/purchase.types';
 
-const BASE_URL = 'http://scmdevice.himalayankasturi.com.np/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 export const RESOURCE_PATH = '/Purchase';
-export const API_URL = `${BASE_URL}${RESOURCE_PATH}/GetAllPurchase`;
-export const GET_BY_ID_URL = `${BASE_URL}${RESOURCE_PATH}/GetPurchaseById`;
-export const CREATE_URL = `${BASE_URL}${RESOURCE_PATH}/CreatePurchase`;
-export const UPDATE_URL = `${BASE_URL}${RESOURCE_PATH}/UpdatePurchase`;
-export const DELETE_URL = `${BASE_URL}${RESOURCE_PATH}/DeletePurchase`;
+export const API_URL = `${API_BASE_URL}${RESOURCE_PATH}/GetAllPurchase`;
+export const GET_BY_ID_URL = `${API_BASE_URL}${RESOURCE_PATH}/GetPurchaseById`;
+export const CREATE_URL = `${API_BASE_URL}${RESOURCE_PATH}/CreatePurchase`;
+export const UPDATE_URL = `${API_BASE_URL}${RESOURCE_PATH}/UpdatePurchase`;
+export const DELETE_URL = `${API_BASE_URL}${RESOURCE_PATH}/DeletePurchase`;
 
 function toItem(raw: any): Purchase {
   const rawDate = raw?.tranDate ?? raw?.trnDate ?? raw?.TranDate ?? raw?.TrnDate ?? '';

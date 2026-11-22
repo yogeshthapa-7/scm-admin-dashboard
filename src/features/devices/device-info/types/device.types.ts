@@ -1,3 +1,5 @@
+import type { PaginatedResult } from '@/shared/types/api.types';
+
 export interface DeviceItem {
   id: number | string;
   purchaseMasterId: number | string;
@@ -18,8 +20,4 @@ export interface FetchDevicesParams {
   signal?: AbortSignal;
 }
 
-export interface FetchDevicesResult {
-  items: DeviceItem[];
-  total: number;
-  filtered: number;
-}
+export type FetchDevicesResult = PaginatedResult<DeviceItem>;

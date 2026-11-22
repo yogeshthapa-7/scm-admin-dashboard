@@ -18,12 +18,10 @@ import {
   CheckCircle2,
   RefreshCw,
   Trash2,
-  UserCheck,
+  Eye,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer } from '@/shared/components/common/appDrawer';
-import { AppTable } from '@/shared/components/common/appTable';
-import { AppPagination } from '@/shared/components/common/AppPagination';
+import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
 import { getAuthUser } from '@/auth/services/login.service';
@@ -725,7 +723,7 @@ export const PurchaseRecord = () => {
                       setViewingPurchase(record);
                       setFormOpen(true);
                     }}
-                    icon={<UserCheck size={17} />}
+                    icon={<Eye size={17} />}
                     style={{ color: '#4b5563' }}
                   />
 
