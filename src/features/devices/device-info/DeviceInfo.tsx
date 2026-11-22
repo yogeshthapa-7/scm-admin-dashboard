@@ -65,12 +65,17 @@ export const DeviceInfo = () => {
       serialNo: String(values.serialNo ?? '').trim(),
       deviceStatusId: String(values.deviceStatusId),
     };
-    const result = await saveDevice(payload);
-    if (!result.success) throw new Error(result.message || 'Failed to save device');
-    message.success(result.message || 'Device saved successfully');
-    setDrawerOpen(false);
-    setEditing(null);
-    await loadDevices();
+    try {
+      const result = await saveDevice(payload);
+      if (!result.success) throw new Error(result.message || 'Failed to save device');
+      message.success(result.message || 'Device saved successfully');
+      setDrawerOpen(false);
+      setEditing(null);
+      await loadDevices();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || error?.message || 'Failed to save device');
+      throw error;
+    }
   };
 
   const handleDeleteConfirmed = async () => {
@@ -157,10 +162,47 @@ export const DeviceInfo = () => {
     >
       Are you sure you want to delete this device? This cannot be undone.
     </Modal>
-    <AppDrawer open={drawerOpen} onClose={() => { setDrawerOpen(false); setEditing(null); }} title={editing ? 'Edit Device' : 'Add Device'} confirmText={editing ? 'Update Device' : 'Add Device'} onSave={handleSave} initialValues={editing ? { ...editing } : undefined}>
-      <Form.Item name="purchaseMasterId" label="Purchase" rules={[{ required: true, message: 'Please select purchase' }]}><Select disabled={Boolean(editing)} options={purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))} placeholder="Select purchase" /></Form.Item>
-      <Form.Item name="serialNo" label="Serial No." rules={[{ required: true, message: 'Please enter serial number' }]}><Input placeholder="Enter serial number" /></Form.Item>
-      <Form.Item name="deviceStatusId" label="Device Status" rules={[{ required: true, message: 'Please select status' }]}><Select disabled={Boolean(editing)} options={statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))} placeholder="Select status" /></Form.Item>
+    <AppDrawer
+      open={drawerOpen}
+      onClose={() => { setDrawerOpen(false); setEditing(null); }}
+      title={editing ? 'Edit Device' : 'Add Device'}
+      confirmText={editing ? 'Update Device' : 'Add Device'}
+      onSave={handleSave}
+      initialValues={
+        editing
+          ? {
+              purchaseMasterId: String(editing.purchaseMasterId ?? ''),
+              serialNo: editing.serialNo,
+              deviceStatusId: String(editing.deviceStatusId ?? ''),
+            }
+          : undefined
+      }
+    >
+      <Form.Item name="purchaseMasterId" label="Purchase Reference No." rules={[{ required: true, message: 'Please select purchase reference no.' }]}>
+        <Select
+          showSearch
+          optionFilterProp="label"
+          options={purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))}
+          placeholder="Select purchase reference no."
+        />
+      </Form.Item>
+      <Form.Item name="serialNo" label="Serial No." rules={[{ required: true, message: 'Please enter serial number' }]}>
+        <Input placeholder="Enter serial number" />
+      </Form.Item>
+      <Form.Item name="deviceStatusId" label="Device Status" rules={[{ required: true, message: 'Please select status' }]}>
+        <Select
+          showSearch
+          optionFilterProp="label"
+          options={(() => {
+            const opts = statuses.map((item) => ({ label: item.statusName, value: String(item.id) }));
+            if (editing?.deviceStatusId != null && editing.deviceStatusId !== '' && !opts.some((o) => o.value === String(editing.deviceStatusId))) {
+              opts.unshift({ label: editing.statusName || `Status ${editing.deviceStatusId}`, value: String(editing.deviceStatusId) });
+            }
+            return opts;
+          })()}
+          placeholder="Select status"
+        />
+      </Form.Item>
     </AppDrawer>
   </div>;
 };

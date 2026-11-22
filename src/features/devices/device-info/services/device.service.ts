@@ -11,13 +11,14 @@ export const DELETE_URL = `${BASE_URL}/Device/DeleteDevice`;
 const GENERATED_DEVICES_KEY = 'generated_devices_fallback';
 
 function toItem(raw: any): DeviceItem {
+  const statusId = raw?.deviceStatusId ?? raw?.DeviceStatusId ?? raw?.statusId ?? raw?.StatusId ?? 0;
   return {
     id: raw?.id ?? raw?.Id ?? 0,
     purchaseMasterId: raw?.purchaseMasterId ?? raw?.PurchaseMasterId ?? 0,
     serialNo: raw?.serialNo ?? raw?.SerialNo ?? raw?.serialNumber ?? raw?.SerialNumber ?? '',
-    deviceStatusId: raw?.deviceStatusId ?? raw?.DeviceStatusId ?? 0,
+    deviceStatusId: statusId,
     purchaseRefNo: raw?.purchaseRefNo ?? raw?.PurchaseRefNo ?? raw?.refNo ?? raw?.RefNo,
-    statusName: raw?.statusName ?? raw?.StatusName,
+    statusName: raw?.deviceStatusName ?? raw?.DeviceStatusName ?? raw?.statusName ?? raw?.StatusName,
     modelName: raw?.modelName ?? raw?.ModelName ?? raw?.deviceModelName ?? raw?.DeviceModelName ?? raw?.model ?? raw?.Model,
   };
 }
@@ -85,14 +86,29 @@ export async function fetchDevices(params: FetchDevicesParams = {}): Promise<Fet
 
 export async function saveDevice(payload: DeviceSavePayload): Promise<{ success: boolean; message?: string; data?: unknown }> {
   const isUpdate = payload.id !== undefined && payload.id !== null && payload.id !== '' && Number(payload.id) !== 0;
-  const id = Number.isNaN(Number(payload.id)) ? payload.id : Number(payload.id);
-  const body = isUpdate
-    ? { id, serialNo: payload.serialNo }
-    : { purchaseMasterId: Number(payload.purchaseMasterId), serialNo: payload.serialNo, deviceStatusId: Number(payload.deviceStatusId) };
+  const id = typeof payload.id === 'string' && /^\d+$/.test(payload.id) ? Number(payload.id) : payload.id;
+  const purchaseMasterId = typeof payload.purchaseMasterId === 'string' && /^\d+$/.test(payload.purchaseMasterId) ? Number(payload.purchaseMasterId) : payload.purchaseMasterId;
+  const deviceStatusId = typeof payload.deviceStatusId === 'string' && /^\d+$/.test(payload.deviceStatusId) ? Number(payload.deviceStatusId) : payload.deviceStatusId;
+
+  const body: Record<string, unknown> = {
+    purchaseMasterId,
+    serialNo: String(payload.serialNo ?? '').trim(),
+    deviceStatusId,
+  };
+
+  if (isUpdate) {
+    body.id = id;
+    body.Id = id;
+  }
+
   const res = isUpdate
     ? await api.put(`${UPDATE_URL}/${payload.id}?action=UpdateDevice`, body)
     : await api.post(CREATE_URL, body);
-  if (failed(res.data)) return { success: false, message: messageOf(res.data, 'Failed to save device'), data: res.data };
+
+  if (failed(res.data)) {
+    return { success: false, message: messageOf(res.data, 'Failed to save device'), data: res.data };
+  }
+
   return { success: true, message: messageOf(res.data, 'Device saved successfully'), data: res.data };
 }
 
