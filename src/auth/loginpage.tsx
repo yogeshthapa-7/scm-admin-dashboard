@@ -7,13 +7,10 @@ import {
   Eye,
   EyeOff,
   LogIn,
-  Mail,
-  Phone,
-  UserPlus,
 } from "lucide-react";
 
 import loginBackground from "../assets/images/login_background.png";
-import { login, register } from "./services/login.service";
+import { login } from "./services/login.service";
 // import type { LoginPayload } from "./types/auth.types";
 
 interface LoginFormValues {
@@ -23,6 +20,7 @@ interface LoginFormValues {
   // company: string;
 }
 
+/* Registration flow is temporarily disabled.
 interface RegisterFormValues {
   firstName: string;
   lastName: string;
@@ -32,6 +30,7 @@ interface RegisterFormValues {
   confirmPassword: string;
   phoneNumber?: string;
 }
+*/
 
 interface LoginPageProps {
   onLogin?: (values: LoginFormValues) => Promise<void>;
@@ -42,17 +41,17 @@ interface LoginPageProps {
 //   import.meta.env.VITE_DEFAULT_COMPANY || COMPANIES[0]?.id || "";
 
 const LoginPage = ({ onLogin }: LoginPageProps) => {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  // const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [loginForm] = Form.useForm<LoginFormValues>();
-  const [registerForm] = Form.useForm<RegisterFormValues>();
+  // const [registerForm] = Form.useForm<RegisterFormValues>();
   const navigate = useNavigate();
   const location = useLocation();
   const from =
     (location.state as { from?: { pathname?: string } })?.from?.pathname ||
     "/dashboard";
 
-  const isLogin = mode === "login";
+  const isLogin = true;
 
   const handleLogin = async (values: LoginFormValues) => {
     try {
@@ -82,7 +81,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     }
   };
 
-  const handleRegister = async (values: RegisterFormValues) => {
+  /* const handleRegister = async (values: RegisterFormValues) => {
     try {
       setLoading(true);
       const result = await register({
@@ -107,7 +106,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }; */
 
   const handleForgotPassword = () => {
     message.info("Please contact your system administrator to reset your password.");
@@ -134,12 +133,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
           <div className="mb-8 text-center">
             <h1 className="m-0 mb-[10px] text-[32px] leading-[1.2] font-bold tracking-[-0.5px] text-[#102d60]">
-              {isLogin ? "Welcome Back!" : "Create Account"}
+              Welcome Back!
             </h1>
             <p className="m-0 text-[15px] leading-[1.6] font-normal text-[#6b7a9d]">
-              {isLogin
-                ? "Sign in to access your device management portal"
-                : "Register to get access to the device management portal"}
+              Sign in to access your device management portal
             </p>
           </div>
 
@@ -245,6 +242,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               </Button>
             </Form>
           ) : (
+            /*
             <Form
               form={registerForm}
               layout="vertical"
@@ -386,32 +384,12 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 Create Account
               </Button>
             </Form>
+            */
+            null
           )}
 
           <div className="mt-6 text-center">
-            {isLogin ? (
-              <p className="m-0 text-[14px] text-[#6b7a9d]">
-                Don't have an account?{" "}
-                <button
-                  type="button"
-                  onClick={() => setMode("register")}
-                  className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[#0874f9] underline hover:text-[#004fc7]"
-                >
-                  Sign up
-                </button>
-              </p>
-            ) : (
-              <p className="m-0 text-[14px] text-[#6b7a9d]">
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className="cursor-pointer border-0 bg-transparent p-0 font-semibold text-[#0874f9] underline hover:text-[#004fc7]"
-                >
-                  Sign in
-                </button>
-              </p>
-            )}
+            {/* Registration link intentionally disabled. */}
           </div>
 
           <div className="mt-8 pt-6 border-t border-[#d8e4f5]">

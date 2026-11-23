@@ -206,6 +206,7 @@ export const DeviceInfo = () => {
             : undefined
         }
       >
+        {/* Purchase Master ID field temporarily disabled as requested.
         <Form.Item name="purchaseMasterId" label="Purchase Master Id" rules={[{ required: true, message: 'Please select purchase master id' }]}>
           <Select
             showSearch
@@ -214,6 +215,7 @@ export const DeviceInfo = () => {
             placeholder="Select purchase master id"
           />
         </Form.Item>
+        */}
         <Form.Item name="serialNo" label="Serial No." rules={[{ required: true, message: 'Please enter serial number' }]}>
           <Input placeholder="Enter serial number" />
         </Form.Item>
