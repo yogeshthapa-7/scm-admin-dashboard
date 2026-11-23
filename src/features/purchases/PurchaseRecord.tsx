@@ -7,7 +7,6 @@ import {
   Modal,
   Input,
   Select,
-  Form,
   theme,
   message,
 } from 'antd';
@@ -24,7 +23,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
-import { getAuthUser } from '@/auth/services/login.service';
 import {
   approvePurchase,
   fetchPurchases,
@@ -98,15 +96,6 @@ const STATUS_STYLES: Record<PurchaseStatus, string> = {
 
 function generateSerialNumber(prefix: string, padding: number, number: number) {
   return `${prefix}-${String(number).padStart(padding, '0')}`;
-}
-
-function getSerialNumberValue(serialNumber: string, prefix: string): number | null {
-  const normalizedPrefix = `${prefix}-`;
-  if (!serialNumber.startsWith(normalizedPrefix)) return null;
-  const suffix = serialNumber.slice(normalizedPrefix.length);
-  if (!/^\d+$/.test(suffix)) return null;
-  const value = Number(suffix);
-  return Number.isFinite(value) ? value : null;
 }
 
 function getNextSnStart(
@@ -315,18 +304,6 @@ export const PurchaseRecord = () => {
     if (purchase.status !== 2) return;
     setEditingPurchase(purchase);
     setFormOpen(true);
-  };
-
-  const getGenerationInfo = (purchase: Purchase) => {
-    const snStart = purchase.snStart ?? 1;
-    const totalItem = Number(purchase.totalItem || 0);
-    const first = generateSerialNumber(purchase.snPrefix, purchase.snPadding, snStart);
-    const last = generateSerialNumber(purchase.snPrefix, purchase.snPadding, snStart + Math.max(totalItem, 1) - 1);
-    const serials = Array.from({ length: totalItem }, (_, index) =>
-      generateSerialNumber(purchase.snPrefix, purchase.snPadding, snStart + index)
-    );
-
-    return { snStart, totalItem, first, last, serials };
   };
 
   const refreshPurchases = async () => {

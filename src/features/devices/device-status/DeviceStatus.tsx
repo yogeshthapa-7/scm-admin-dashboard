@@ -121,7 +121,7 @@ export const DeviceStatus = () => {
       ),
     },
     {
-      title: 'Code',
+      title: 'Status Code',
       dataIndex: 'code',
       key: 'code',
       width: 150,

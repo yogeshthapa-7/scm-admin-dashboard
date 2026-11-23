@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Modal, Space, Typography, message } from 'antd';
-import { Delete, Edit, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
+import { Building2, Trash, Edit, Plus, Search } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppTable } from '@/shared/components/common';
+import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { deleteCompanyInfo, fetchCompanyInfo, saveCompanyInfo } from './services/company-info.service';
 import type { CompanyInfoItem } from './types/company-info.types';
 
@@ -18,11 +18,14 @@ export const CompanyInfo = () => {
   const [editingCompany, setEditingCompany] = useState<CompanyInfoItem | null>(null);
   const [companies, setCompanies] = useState<CompanyInfoItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetchCompanyInfo({});
+      const res = await fetchCompanyInfo({ start: 0, length: 100000 });
       setCompanies(res.items);
     } catch {
       message.error('Failed to load company info');
@@ -85,6 +88,25 @@ export const CompanyInfo = () => {
     }
   };
 
+  const visibleCompanies = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return companies;
+    return companies.filter((company) =>
+      [company.fullName, company.email, company.contactNo, company.address, company.make]
+        .some((value) => String(value ?? '').toLowerCase().includes(query)),
+    );
+  }, [companies, search]);
+
+  const paginatedCompanies = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return visibleCompanies.slice(start, start + pageSize);
+  }, [page, pageSize, visibleCompanies]);
+
+  useEffect(() => {
+    const lastPage = Math.max(1, Math.ceil(visibleCompanies.length / pageSize));
+    if (page > lastPage) setPage(lastPage);
+  }, [page, pageSize, visibleCompanies.length]);
+
   const columns = [
     {
       title: 'Company Name',
@@ -143,7 +165,7 @@ export const CompanyInfo = () => {
           </Button>
           <Button
             onClick={() => handleDeleteConfirm(record.id)}
-            icon={<Delete size={16} />}
+            icon={<Trash size={16} />}
             style={{
               height: 32,
               borderRadius: 6,
@@ -164,55 +186,68 @@ export const CompanyInfo = () => {
   ];
 
   return (
-    <div>
-      {/* Header banner */}
-      <Card
-        style={{
-          marginBottom: 32,
-          background: isDark
-            ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-            : 'linear-gradient(135deg, #0d3b7a 0%, #1a4d8f 60%, #2563a8 100%)',
-          border: 'none',
-        }}
-      >
-        <div className="flex items-center justify-between">
+    <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
+      <div className="company-hero">
+        <div className="company-hero-content">
+          <div className="company-hero-icon" aria-hidden="true">
+            <Building2 size={29} strokeWidth={1.8} />
+          </div>
           <div>
-            <Title level={2} style={{ color: '#fff', margin: 0 }}>
+            <Title level={2} className="company-hero-title">
               Company Information
             </Title>
-            <Text style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Manage company details and configuration
-            </Text>
+            <Text className="company-hero-subtitle">Manage company details and configuration</Text>
           </div>
-          {companies.length === 0 && (
-            <Button
-              onClick={() => {
-                setEditingCompany(null);
-                setDrawerOpen(true);
-              }}
-              icon={<Plus size={18} />}
-              className="
-                h-[38px] rounded-[8px] border-[1.5px] border-white/[0.3]
-                bg-white/[0.15] text-white font-medium px-5
-                hover:bg-white/[0.25] transition-all
-              "
-            >
-              Add Company
-            </Button>
-          )}
         </div>
-      </Card>
+        <Button
+          onClick={() => {
+            setEditingCompany(null);
+            setDrawerOpen(true);
+          }}
+          icon={<Plus size={18} />}
+          className="company-add-button"
+        >
+          Add Company
+        </Button>
+      </div>
+
+      <div className="company-toolbar">
+        <Input
+          allowClear
+          prefix={<Search size={17} />}
+          value={search}
+          placeholder="Search company name, email, address..."
+          aria-label="Search company information"
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
 
       {/* Company Info table */}
-      <AppTable<CompanyInfoItem>
-        columns={columns}
-        dataSource={companies}
-        rowKey="id"
-        title="Company Profiles"
-        emptyDescription="No company profiles found. Click Add Company to create one."
-        pagination={false}
-        loading={loading}
-      />
+      <div className="company-table-card">
+        <AppTable<CompanyInfoItem>
+          className="company-table"
+          columns={columns}
+          dataSource={paginatedCompanies}
+          rowKey="id"
+          emptyDescription="No company profiles found. Click Add Company to create one."
+          pagination={false}
+          loading={loading}
+        />
+        <div className="company-pagination">
+          <AppPagination
+            current={page}
+            pageSize={pageSize}
+            total={visibleCompanies.length}
+            onChange={(newPage, newPageSize) => {
+              setPage(newPage);
+              setPageSize(newPageSize);
+            }}
+          />
+        </div>
+      </div>
 
       {/* Delete confirmation */}
       <Modal
@@ -257,6 +292,7 @@ export const CompanyInfo = () => {
         }}
         title={editingCompany ? 'Edit Company' : 'Add Company'}
         confirmText={editingCompany ? 'Update Company' : 'Add Company'}
+        rootClassName="company-app-drawer"
         onSave={handleSaveCompany}
         initialValues={editingCompany ? { ...editingCompany } : undefined}
       >

@@ -7,6 +7,7 @@ interface AppDrawerProps {
   title?: string;
   confirmText?: string;
   width?: number | string;
+  rootClassName?: string;
   children: React.ReactNode;
   onSave: (values: Record<string, unknown>) => void | Promise<void>;
   initialValues?: Record<string, unknown>;
@@ -18,6 +19,7 @@ export const AppDrawer = ({
   title = 'Add New Item',
   confirmText = 'Add',
   width = 700,
+  rootClassName,
   children,
   onSave,
   initialValues,
@@ -55,7 +57,7 @@ export const AppDrawer = ({
       open={open}
       onClose={onClose}
       width={width}
-      rootClassName="responsive-app-drawer"
+      rootClassName={`responsive-app-drawer ${rootClassName ?? ''}`.trim()}
       bodyStyle={{ paddingBottom: 0 }}
       drawerStyle={{ paddingBottom: 24 }}
     >

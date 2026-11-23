@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Form, Input, Modal, Space, Typography, message } from 'antd';
-import { Delete, Edit, Plus } from 'lucide-react';
+import { Edit, Plus, Trash } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { deleteDeviceModel, fetchDeviceModels, saveDeviceModel } from './services/device-model.service';
@@ -118,7 +118,7 @@ export const DeviceModel = () => {
           </Button>
           <Button
             onClick={() => handleDeleteConfirm(record.id)}
-            icon={<Delete size={16} />}
+            icon={<Trash size={16} />}
             style={{
               height: 32,
               borderRadius: 6,
