@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
-import { Building2, Trash, Edit, Plus, Search } from 'lucide-react';
+import { Button, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
+import { Building2, Trash, Edit, Plus, Search, SlidersHorizontal, RefreshCcw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { deleteCompanyInfo, fetchCompanyInfo, saveCompanyInfo } from './services/company-info.service';
@@ -19,6 +19,10 @@ export const CompanyInfo = () => {
   const [companies, setCompanies] = useState<CompanyInfoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [emailDraft, setEmailDraft] = useState('');
+  const [contactDraft, setContactDraft] = useState('');
+  const [addressDraft, setAddressDraft] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
 
@@ -90,12 +94,17 @@ export const CompanyInfo = () => {
 
   const visibleCompanies = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return companies;
-    return companies.filter((company) =>
-      [company.fullName, company.email, company.contactNo, company.address, company.make]
-        .some((value) => String(value ?? '').toLowerCase().includes(query)),
-    );
-  }, [companies, search]);
+    const emailQ = emailDraft.trim().toLowerCase();
+    const contactQ = contactDraft.trim().toLowerCase();
+    const addressQ = addressDraft.trim().toLowerCase();
+    return companies.filter((company) => {
+      const matchesName = !query || String(company.fullName ?? '').toLowerCase().includes(query);
+      const matchesEmail = !emailQ || String(company.email ?? '').toLowerCase().includes(emailQ);
+      const matchesContact = !contactQ || String(company.contactNo ?? '').toLowerCase().includes(contactQ);
+      const matchesAddress = !addressQ || String(company.address ?? '').toLowerCase().includes(addressQ);
+      return matchesName && matchesEmail && matchesContact && matchesAddress;
+    });
+  }, [companies, search, emailDraft, contactDraft, addressDraft]);
 
   const paginatedCompanies = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -218,14 +227,77 @@ export const CompanyInfo = () => {
           allowClear
           prefix={<Search size={17} />}
           value={search}
-          placeholder="Search company name, email, address..."
-          aria-label="Search company information"
+          placeholder="Search company name..."
+          aria-label="Search company name"
+          style={{ maxWidth: 280 }}
           onChange={(event) => {
             setSearch(event.target.value);
             setPage(1);
           }}
         />
+        <Button
+          icon={<SlidersHorizontal size={17} />}
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          Filters
+        </Button>
       </div>
+
+      {filtersOpen && (
+        <div className="company-toolbar" style={{ marginBottom: 12, flexWrap: 'wrap', alignItems: 'end' }}>
+          <Input
+            allowClear
+            placeholder="Filter by email"
+            value={emailDraft}
+            onChange={(e) => setEmailDraft(e.target.value)}
+            style={{ width: 200 }}
+          />
+          <Input
+            allowClear
+            placeholder="Filter by contact"
+            value={contactDraft}
+            onChange={(e) => setContactDraft(e.target.value)}
+            style={{ width: 200 }}
+          />
+          <Input
+            allowClear
+            placeholder="Filter by address"
+            value={addressDraft}
+            onChange={(e) => setAddressDraft(e.target.value)}
+            style={{ width: 200 }}
+          />
+          <div style={{ flex: 1 }}>
+            <Text strong>Active filters: </Text>
+            <Text type="secondary">
+              {search.trim() ? `Name contains “${search.trim()}”` : 'No text filter'}
+              {emailDraft.trim() ? ` · Email contains “${emailDraft.trim()}”` : ''}
+              {contactDraft.trim() ? ` · Contact contains “${contactDraft.trim()}”` : ''}
+              {addressDraft.trim() ? ` · Address contains “${addressDraft.trim()}”` : ''}
+            </Text>
+          </div>
+          <Button
+            onClick={() => {
+              setPage(1);
+            }}
+            style={{ height: 38, borderRadius: 8, border: '1.5px solid #1677ff', background: '#1677ff', color: '#fff', fontWeight: 600 }}
+          >
+            Filter
+          </Button>
+          <Button
+            onClick={() => {
+              setEmailDraft('');
+              setContactDraft('');
+              setAddressDraft('');
+              setPage(1);
+            }}
+            icon={<RefreshCcw size={16} />}
+            style={{ height: 38, borderRadius: 8 }}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
 
       {/* Company Info table */}
       <div className="company-table-card">

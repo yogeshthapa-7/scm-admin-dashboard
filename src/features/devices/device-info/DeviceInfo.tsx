@@ -154,7 +154,7 @@ export const DeviceInfo = () => {
 
       <div className="company-toolbar">
         <Select value={purchaseFilter} onChange={(value) => { setPurchaseFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]} />
-        <Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Statuses', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} />
+        <Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Status', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} />
       </div>
 
       <div className="company-table-card">

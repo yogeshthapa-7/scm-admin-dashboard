@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   RefreshCw,
   Trash2,
+  SlidersHorizontal,
   Eye,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -169,6 +170,7 @@ export const PurchaseRecord = () => {
   const [statusDraft, setStatusDraft] = useState<'all' | '0' | '1' | '2' | '3' | '4'>('all');
   const [fromDateDraft, setFromDateDraft] = useState('');
   const [toDateDraft, setToDateDraft] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
   const [viewingPurchase, setViewingPurchase] = useState<Purchase | null>(null);
@@ -427,66 +429,58 @@ export const PurchaseRecord = () => {
       </div>
 
       {/* Purchase table */}
-        <div className="company-toolbar" style={{ flexWrap: 'wrap', alignItems: 'end' }}>
+        <div className="company-toolbar">
           <Input
+            allowClear
             placeholder="Search reference number..."
             value={searchDraft}
             onChange={(e) => setSearchDraft(e.target.value)}
             prefix={<Search size={17} />}
-            style={{ maxWidth: 220 }}
+            style={{ maxWidth: 280 }}
           />
-          <Select
-            value={statusDraft}
-            onChange={(value) => setStatusDraft(value)}
-            style={{ width: 160 }}
-            options={[
-              { value: 'all', label: 'All Status' },
-              { value: '2', label: 'Draft' },
-              { value: '1', label: 'Approved' },
-              { value: '3', label: 'Generated' },
-              { value: '4', label: 'Rejected' },
-            ]}
-          />
-          <div style={{ display: 'flex', gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
-              From
-              <NepaliDatePicker value={fromDateDraft} returnEnglishDate placeholder="From date" onChange={(value) => setFromDateDraft(value)} />
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
-              To
-              <NepaliDatePicker value={toDateDraft} returnEnglishDate placeholder="To date" onChange={(value) => setToDateDraft(value)} />
-            </label>
-          </div>
-          <Button
-            onClick={() => {
-              setSearch(searchDraft);
-              setStatusFilter(statusDraft);
-              setFromDate(fromDateDraft);
-              setToDate(toDateDraft);
-              setPage(1);
-            }}
-            style={{ height: 38, borderRadius: 8, border: '1.5px solid #1677ff', background: '#1677ff', color: '#fff', fontWeight: 600 }}
-          >
-            Filter
-          </Button>
-          <Button
-            onClick={() => {
-              setSearchDraft('');
-              setStatusDraft('all');
-              setFromDateDraft('');
-              setToDateDraft('');
-              setSearch('');
-              setStatusFilter('all');
-              setFromDate('');
-              setToDate('');
-              setPage(1);
-            }}
-            icon={<RefreshCw size={16} />}
-            style={{ height: 38, borderRadius: 8 }}
-          >
-            Clear
-          </Button>
+          <Button icon={<SlidersHorizontal size={17} />} onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>Filters</Button>
         </div>
+
+        {filtersOpen && (
+          <div className="company-toolbar" style={{ marginBottom: 12, flexWrap: 'wrap', alignItems: 'end' }}>
+            <Select
+              value={statusDraft}
+              onChange={(value) => setStatusDraft(value)}
+              style={{ width: 160 }}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: '2', label: 'Draft' },
+                { value: '1', label: 'Approved' },
+                { value: '3', label: 'Generated' },
+                { value: '4', label: 'Rejected' },
+              ]}
+            />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+                From
+                <NepaliDatePicker value={fromDateDraft} returnEnglishDate placeholder="From date" onChange={(value) => setFromDateDraft(value)} />
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+                To
+                <NepaliDatePicker value={toDateDraft} returnEnglishDate placeholder="To date" onChange={(value) => setToDateDraft(value)} />
+              </label>
+            </div>
+            <Button
+              onClick={() => {
+                setSearch(searchDraft); setStatusFilter(statusDraft); setFromDate(fromDateDraft); setToDate(toDateDraft); setPage(1);
+              }}
+              style={{ height: 38, borderRadius: 8, border: '1.5px solid #1677ff', background: '#1677ff', color: '#fff', fontWeight: 600 }}
+            >Filter</Button>
+            <Button
+              onClick={() => {
+                setSearchDraft(''); setStatusDraft('all'); setFromDateDraft(''); setToDateDraft('');
+                setSearch(''); setStatusFilter('all'); setFromDate(''); setToDate(''); setPage(1);
+              }}
+              icon={<RefreshCw size={16} />}
+              style={{ height: 38, borderRadius: 8 }}
+            >Clear</Button>
+          </div>
+        )}
 
         <div className="company-table-card">
           <AppTable<Purchase>

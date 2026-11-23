@@ -203,40 +203,13 @@ export const DeviceStatus = () => {
           value={search}
           placeholder="Search status name or code..."
           aria-label="Search status name or code"
+          style={{ maxWidth: 280 }}
           onChange={(event) => {
             setSearch(event.target.value);
             setPage(1);
           }}
         />
-        <Button
-          icon={<SlidersHorizontal size={17} />}
-          aria-expanded={filtersOpen}
-          onClick={() => setFiltersOpen((open) => !open)}
-        >
-          Filters
-        </Button>
       </div>
-
-      {filtersOpen && (
-        <div className="company-toolbar" style={{ marginBottom: 12 }}>
-          <div style={{ flex: 1 }}>
-            <Text strong>Active filters: </Text>
-            <Text type="secondary">
-              {search.trim() ? `Status name or code contains “${search.trim()}”` : 'No filters applied'}
-            </Text>
-          </div>
-          <Button
-            size="small"
-            disabled={!search.trim()}
-            onClick={() => {
-              setSearch('');
-              setPage(1);
-            }}
-          >
-            Clear filters
-          </Button>
-        </div>
-      )}
 
       <div className="company-table-card">
         <AppTable<DeviceStatusItem>
