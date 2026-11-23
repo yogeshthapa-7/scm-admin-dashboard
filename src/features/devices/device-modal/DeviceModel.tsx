@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Modal, Space, Typography, message } from 'antd';
-import { Edit, Plus, Trash } from 'lucide-react';
+import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
+import { Edit, Monitor, Plus, Trash } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { deleteDeviceModel, fetchDeviceModels, saveDeviceModel } from './services/device-model.service';
@@ -139,64 +139,51 @@ export const DeviceModel = () => {
   ];
 
   return (
-    <div>
-      {/* Header banner */}
-      <Card
-        style={{
-          marginBottom: 32,
-          background: isDark
-            ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-            : 'linear-gradient(135deg, #0d3b7a 0%, #1a4d8f 60%, #2563a8 100%)',
-          border: 'none',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <Title level={2} style={{ color: '#fff', margin: 0 }}>
-              Device Model
-            </Title>
-            <Text style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Manage device model types
-            </Text>
+    <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
+      <div className="company-hero">
+        <div className="company-hero-content">
+          <div className="company-hero-icon" aria-hidden="true">
+            <Monitor size={29} strokeWidth={1.8} />
           </div>
-          <Button
-            onClick={() => {
-              setEditingModel(null);
-              setDrawerOpen(true);
-            }}
-            icon={<Plus size={18} />}
-            className="
-              h-[38px] rounded-[8px] border-[1.5px] border-white/[0.3]
-              bg-white/[0.15] text-white font-medium px-5
-              hover:bg-white/[0.25] transition-all
-            "
-          >
-            Add Model
-          </Button>
+          <div>
+            <Title level={2} className="company-hero-title">Device Model</Title>
+            <Text className="company-hero-subtitle">Manage device model types</Text>
+          </div>
         </div>
-      </Card>
+        <Button
+          onClick={() => {
+            setEditingModel(null);
+            setDrawerOpen(true);
+          }}
+          icon={<Plus size={18} />}
+          className="company-add-button"
+        >
+          Add Model
+        </Button>
+      </div>
 
-      {/* Device Model table */}
-      <AppTable<DeviceModelItem>
-        columns={columns}
-        dataSource={models}
-        rowKey="id"
-        title="Device Models"
-        emptyDescription="No device models found. Click Add Model to create one."
-        pagination={false}
-        loading={loading}
-      />
-
-      {/* Server-side Pagination */}
-      <AppPagination
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={(newPage, newPageSize) => {
-          setPage(newPage);
-          setPageSize(newPageSize);
-        }}
-      />
+      <div className="company-table-card">
+        <AppTable<DeviceModelItem>
+          className="company-table"
+          columns={columns}
+          dataSource={models}
+          rowKey="id"
+          emptyDescription="No device models found. Click Add Model to create one."
+          pagination={false}
+          loading={loading}
+        />
+        <div className="company-pagination">
+          <AppPagination
+            current={page}
+            pageSize={pageSize}
+            total={total}
+            onChange={(newPage, newPageSize) => {
+              setPage(newPage);
+              setPageSize(newPageSize);
+            }}
+          />
+        </div>
+      </div>
 
       {/* Delete confirmation */}
       <Modal

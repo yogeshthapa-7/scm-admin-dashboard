@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
-import { Delete, Edit } from 'lucide-react';
+import { Button, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
+import { Cpu, Delete, Edit } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { deleteDevice, fetchDevices, saveDevice } from './services/device.service';
@@ -12,6 +12,7 @@ const { Title, Text } = Typography;
 
 export const DeviceInfo = () => {
   const { mode } = useTheme();
+  const isDark = mode === 'dark';
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [purchases, setPurchases] = useState<{ id: number; refNo: string }[]>([]);
   const [statuses, setStatuses] = useState<{ id: number | string; statusName: string }[]>([]);
@@ -137,71 +138,90 @@ export const DeviceInfo = () => {
     },
   ];
 
-  return <div>
-    <Card style={{ marginBottom: 32, background: mode === 'dark' ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(135deg, #0d3b7a 0%, #1a4d8f 60%, #2563a8 100%)', border: 'none' }}>
-      <div className="flex items-center justify-between"><div><Title level={2} style={{ color: '#fff', margin: 0 }}>Device Information</Title><Text style={{ color: 'rgba(255,255,255,0.75)' }}>Manage registered devices</Text></div></div>
-    </Card>
-    <div className="mb-4 flex flex-wrap gap-3"><Select value={purchaseFilter} onChange={(value) => { setPurchaseFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]} /><Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Status', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} /></div>
-    <AppTable<DeviceItem> columns={columns} dataSource={devices} rowKey="id" title="Devices" pagination={false} loading={loading} emptyDescription="No devices found" />
-    <AppPagination current={page} pageSize={pageSize} total={total} onChange={(nextPage, nextSize) => { setPage(nextPage); setPageSize(nextSize); }} />
-    <Modal
-      open={Boolean(deleteTarget)}
-      title="Delete Device"
-      onCancel={() => setDeleteTarget(null)}
-      width={500}
-      zIndex={1100}
-      footer={[
-        <Button key="cancel" onClick={() => setDeleteTarget(null)} style={{ height: 38, borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', color: '#4b5563', fontWeight: 500 }}>
-          Cancel
-        </Button>,
-        <Button key="confirm" onClick={handleDeleteConfirmed} style={{ height: 38, borderRadius: 8, border: '1.5px solid #f5222d', background: '#f5222d', color: '#fff', fontWeight: 600, boxShadow: '0 4px 8px rgba(245,34,45,0.2)' }}>
-          Confirm Delete
-        </Button>,
-      ]}
-    >
-      Are you sure you want to delete this device? This cannot be undone.
-    </Modal>
-    <AppDrawer
-      open={drawerOpen}
-      onClose={() => { setDrawerOpen(false); setEditing(null); }}
-      title="Edit Device"
-      confirmText="Update Device"
-      onSave={handleSave}
-      initialValues={
-        editing
-          ? {
-              purchaseMasterId: String(editing.purchaseMasterId ?? ''),
-              serialNo: editing.serialNo,
-              deviceStatusId: String(editing.deviceStatusId ?? ''),
-            }
-          : undefined
-      }
-    >
-      <Form.Item name="purchaseMasterId" label="Purchase Master Id" rules={[{ required: true, message: 'Please select purchase master id' }]}>
-        <Select
-          showSearch
-          optionFilterProp="label"
-          options={purchases.map((item) => ({ label: String(item.id), value: String(item.id) }))}
-          placeholder="Select purchase master id"
-        />
-      </Form.Item>
-      <Form.Item name="serialNo" label="Serial No." rules={[{ required: true, message: 'Please enter serial number' }]}>
-        <Input placeholder="Enter serial number" />
-      </Form.Item>
-      <Form.Item name="deviceStatusId" label="Device Status" rules={[{ required: true, message: 'Please select status' }]}>
-        <Select
-          showSearch
-          optionFilterProp="label"
-          options={(() => {
-            const opts = statuses.map((item) => ({ label: item.statusName, value: String(item.id) }));
-            if (editing?.deviceStatusId != null && editing.deviceStatusId !== '' && !opts.some((o) => o.value === String(editing.deviceStatusId))) {
-              opts.unshift({ label: editing.statusName || `Status ${editing.deviceStatusId}`, value: String(editing.deviceStatusId) });
-            }
-            return opts;
-          })()}
-          placeholder="Select status"
-        />
-      </Form.Item>
-    </AppDrawer>
-  </div>;
+  return (
+    <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
+      <div className="company-hero">
+        <div className="company-hero-content">
+          <div className="company-hero-icon" aria-hidden="true">
+            <Cpu size={29} strokeWidth={1.8} />
+          </div>
+          <div>
+            <Title level={2} className="company-hero-title">Device Information</Title>
+            <Text className="company-hero-subtitle">Manage registered devices</Text>
+          </div>
+        </div>
+      </div>
+
+      <div className="company-toolbar">
+        <Select value={purchaseFilter} onChange={(value) => { setPurchaseFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]} />
+        <Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Statuses', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} />
+      </div>
+
+      <div className="company-table-card">
+        <AppTable<DeviceItem> className="company-table" columns={columns} dataSource={devices} rowKey="id" pagination={false} loading={loading} emptyDescription="No devices found" />
+        <div className="company-pagination">
+          <AppPagination current={page} pageSize={pageSize} total={total} onChange={(nextPage, nextSize) => { setPage(nextPage); setPageSize(nextSize); }} />
+        </div>
+      </div>
+      <Modal
+        open={Boolean(deleteTarget)}
+        title="Delete Device"
+        onCancel={() => setDeleteTarget(null)}
+        width={500}
+        zIndex={1100}
+        footer={[
+          <Button key="cancel" onClick={() => setDeleteTarget(null)} style={{ height: 38, borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', color: '#4b5563', fontWeight: 500 }}>
+            Cancel
+          </Button>,
+          <Button key="confirm" onClick={handleDeleteConfirmed} style={{ height: 38, borderRadius: 8, border: '1.5px solid #f5222d', background: '#f5222d', color: '#fff', fontWeight: 600, boxShadow: '0 4px 8px rgba(245,34,45,0.2)' }}>
+            Confirm Delete
+          </Button>,
+        ]}
+      >
+        Are you sure you want to delete this device? This cannot be undone.
+      </Modal>
+      <AppDrawer
+        open={drawerOpen}
+        onClose={() => { setDrawerOpen(false); setEditing(null); }}
+        title="Edit Device"
+        confirmText="Update Device"
+        onSave={handleSave}
+        initialValues={
+          editing
+            ? {
+                purchaseMasterId: String(editing.purchaseMasterId ?? ''),
+                serialNo: editing.serialNo,
+                deviceStatusId: String(editing.deviceStatusId ?? ''),
+              }
+            : undefined
+        }
+      >
+        <Form.Item name="purchaseMasterId" label="Purchase Master Id" rules={[{ required: true, message: 'Please select purchase master id' }]}>
+          <Select
+            showSearch
+            optionFilterProp="label"
+            options={purchases.map((item) => ({ label: String(item.id), value: String(item.id) }))}
+            placeholder="Select purchase master id"
+          />
+        </Form.Item>
+        <Form.Item name="serialNo" label="Serial No." rules={[{ required: true, message: 'Please enter serial number' }]}>
+          <Input placeholder="Enter serial number" />
+        </Form.Item>
+        <Form.Item name="deviceStatusId" label="Device Status" rules={[{ required: true, message: 'Please select status' }]}>
+          <Select
+            showSearch
+            optionFilterProp="label"
+            options={(() => {
+              const opts = statuses.map((item) => ({ label: item.statusName, value: String(item.id) }));
+              if (editing?.deviceStatusId != null && editing.deviceStatusId !== '' && !opts.some((o) => o.value === String(editing.deviceStatusId))) {
+                opts.unshift({ label: editing.statusName || `Status ${editing.deviceStatusId}`, value: String(editing.deviceStatusId) });
+              }
+              return opts;
+            })()}
+            placeholder="Select status"
+          />
+        </Form.Item>
+      </AppDrawer>
+    </div>
+  );
 };

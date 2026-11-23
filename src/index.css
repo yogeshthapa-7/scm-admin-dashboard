@@ -340,6 +340,12 @@ h1, h2, h3, h4, h5, h6,
   font-size: 13px !important;
 }
 
+.company-page .company-table-card .ant-table-tbody .ant-typography,
+.company-page .company-table-card .ant-table-tbody td,
+.company-page .company-table-card .ant-table-tbody td .ant-typography {
+  font-size: 14px !important;
+}
+
 .company-page .company-hero-title,
 .company-page h2.ant-typography {
   font-size: clamp(1.25rem, 2vw, 1.7rem) !important;
@@ -490,14 +496,14 @@ h1, h2, h3, h4, h5, h6,
   border-bottom: 0;
   color: #fff;
   background: linear-gradient(135deg, #174681, #2465ad) !important;
-  font-size: 12px !important;
+  font-size: 16px !important;
   font-weight: 700;
 }
 
 .company-table-card .ant-table-tbody > tr > td {
   border-bottom: 1px solid #edf1f6;
   color: #263b57;
-  font-size: 12px !important;
+  font-size: 14px !important;
 }
 
 .company-table-card .ant-table-tbody > tr:hover > td {

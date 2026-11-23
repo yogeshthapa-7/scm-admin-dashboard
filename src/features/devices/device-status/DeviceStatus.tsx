@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Input, Modal, Space, Typography, message } from 'antd';
+import { Button, Input, Modal, Space, Typography, message } from 'antd';
 import { Activity, Edit, Plus, Search, SlidersHorizontal, Trash } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
@@ -173,48 +173,33 @@ export const DeviceStatus = () => {
   ];
 
   return (
-    <div>
-      <Card
-        className="device-status-hero"
-        style={{
-          marginBottom: 24,
-          background: isDark
-            ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-            : 'linear-gradient(135deg, #0d3b7a 0%, #1a4d8f 60%, #2563a8 100%)',
-          border: 'none',
-        }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-5">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="device-status-hero-icon" aria-hidden="true">
-              <Activity size={30} strokeWidth={1.8} />
-            </div>
-            <div>
-              <Title level={2} style={{ color: '#fff', margin: 0, fontSize: 'clamp(1.35rem, 2.4vw, 2rem)' }}>
-                Device Status
-              </Title>
-              <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 14 }}>
-                Manage device status types and their display order
-              </Text>
-            </div>
+    <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
+      <div className="company-hero">
+        <div className="company-hero-content">
+          <div className="company-hero-icon" aria-hidden="true">
+            <Activity size={29} strokeWidth={1.8} />
           </div>
-          <Button
-            onClick={() => {
-              setEditingStatus(null);
-              setDrawerOpen(true);
-            }}
-            icon={<Plus size={18} />}
-            className="device-status-add-button"
-          >
-            Add Device Status
-          </Button>
+          <div>
+            <Title level={2} className="company-hero-title">Device Status</Title>
+            <Text className="company-hero-subtitle">Manage device status types and their display order</Text>
+          </div>
         </div>
-      </Card>
+        <Button
+          onClick={() => {
+            setEditingStatus(null);
+            setDrawerOpen(true);
+          }}
+          icon={<Plus size={18} />}
+          className="company-add-button"
+        >
+          Add Device Status
+        </Button>
+      </div>
 
-      <div className="device-status-toolbar">
+      <div className="company-toolbar">
         <Input
           allowClear
-          prefix={<Search size={18} />}
+          prefix={<Search size={17} />}
           value={search}
           placeholder="Search status name or code..."
           aria-label="Search status name or code"
@@ -224,7 +209,6 @@ export const DeviceStatus = () => {
           }}
         />
         <Button
-          className="device-status-filter-button"
           icon={<SlidersHorizontal size={17} />}
           aria-expanded={filtersOpen}
           onClick={() => setFiltersOpen((open) => !open)}
@@ -234,9 +218,9 @@ export const DeviceStatus = () => {
       </div>
 
       {filtersOpen && (
-        <div className="device-status-filter-panel">
-          <div>
-            <Text className="device-status-filter-label">Active filters</Text>
+        <div className="company-toolbar" style={{ marginBottom: 12 }}>
+          <div style={{ flex: 1 }}>
+            <Text strong>Active filters: </Text>
             <Text type="secondary">
               {search.trim() ? `Status name or code contains “${search.trim()}”` : 'No filters applied'}
             </Text>
@@ -254,9 +238,9 @@ export const DeviceStatus = () => {
         </div>
       )}
 
-      <div className="device-status-table-card">
+      <div className="company-table-card">
         <AppTable<DeviceStatusItem>
-          className="device-status-table"
+          className="company-table"
           columns={columns}
           dataSource={statuses}
           rowKey="id"
@@ -265,7 +249,7 @@ export const DeviceStatus = () => {
           loading={loading}
         />
 
-        <div className="device-status-pagination">
+        <div className="company-pagination">
           <AppPagination
             current={page}
             pageSize={pageSize}

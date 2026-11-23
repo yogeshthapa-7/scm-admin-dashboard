@@ -390,39 +390,26 @@ export const PurchaseRecord = () => {
   ];
 
   return (
-    <div>
-      {/* Header banner */}
-      <Card
-        style={{
-          marginBottom: 32,
-          background: isDark
-            ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-            : 'linear-gradient(135deg, #0d3b7a 0%, #1a4d8f 60%, #2563a8 100%)',
-          border: 'none',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <Title level={2} style={{ color: '#fff', margin: 0 }}>
-              Purchase Master
-            </Title>
-            <Text style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Manage device purchases and generate device records.
-            </Text>
+      <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
+        {/* Header banner */}
+        <div className="company-hero">
+          <div className="company-hero-content">
+            <div className="company-hero-icon" aria-hidden="true">
+              <Plus size={29} strokeWidth={1.8} />
+            </div>
+            <div>
+              <Title level={2} className="company-hero-title">Purchase Master</Title>
+              <Text className="company-hero-subtitle">Manage device purchases and generate device records.</Text>
+            </div>
           </div>
           <Button
             onClick={() => setFormOpen(true)}
-            icon={<Plus size={16} />}
-            className="
-              h-[38px] rounded-[8px] border-[1.5px] border-white/[0.3]
-              bg-white/[0.15] text-white font-medium px-5
-              hover:bg-white/[0.25] transition-all
-            "
+            icon={<Plus size={18} />}
+            className="company-add-button"
           >
-             New Purchase
+            Create Purchase
           </Button>
         </div>
-      </Card>
 
       {/* Summary cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -440,62 +427,37 @@ export const PurchaseRecord = () => {
       </div>
 
       {/* Purchase table */}
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full flex-wrap items-end gap-3 lg:flex-nowrap">
+        <div className="company-toolbar" style={{ flexWrap: 'wrap', alignItems: 'end' }}>
           <Input
             placeholder="Search reference number..."
             value={searchDraft}
-            onChange={(e) => {
-              setSearchDraft(e.target.value);
-            }}
-            prefix={<Search />}
-            className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-40 lg:w-44"
+            onChange={(e) => setSearchDraft(e.target.value)}
+            prefix={<Search size={17} />}
+            style={{ maxWidth: 220 }}
           />
-
           <Select
             value={statusDraft}
-            onChange={(value) => {
-              setStatusDraft(value);
-            }}
-            className="h-[38px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:w-36 lg:w-40"
-          >
-            <option value="all">All Status</option>
-            <option value="2">Draft</option>
-            <option value="1">Approved</option>
-            <option value="3">Generated</option>
-            <option value="4">Rejected</option>
-          </Select>
-
-          <fieldset className="flex w-full shrink-0 items-end gap-2 rounded-lg border border-gray-300 px-2 pb-1 pt-0 sm:w-auto">
-            <legend className="px-1 text-xs font-medium text-gray-600">Transaction Date</legend>
-            <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+            onChange={(value) => setStatusDraft(value)}
+            style={{ width: 160 }}
+            options={[
+              { value: 'all', label: 'All Status' },
+              { value: '2', label: 'Draft' },
+              { value: '1', label: 'Approved' },
+              { value: '3', label: 'Generated' },
+              { value: '4', label: 'Rejected' },
+            ]}
+          />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
               From
-              <NepaliDatePicker
-                value={fromDateDraft}
-                returnEnglishDate
-                placeholder="From date"
-                onChange={(value) => {
-                  setFromDateDraft(value);
-                }}
-                className="h-[34px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
-              />
+              <NepaliDatePicker value={fromDateDraft} returnEnglishDate placeholder="From date" onChange={(value) => setFromDateDraft(value)} />
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
               To
-              <NepaliDatePicker
-                value={toDateDraft}
-                returnEnglishDate
-                placeholder="To date"
-                onChange={(value) => {
-                  setToDateDraft(value);
-                }}
-                className="h-[34px] w-full rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 sm:w-56"
-              />
+              <NepaliDatePicker value={toDateDraft} returnEnglishDate placeholder="To date" onChange={(value) => setToDateDraft(value)} />
             </label>
-          </fieldset>
+          </div>
           <Button
-            type="primary"
-            icon={<Search size={16} />}
             onClick={() => {
               setSearch(searchDraft);
               setStatusFilter(statusDraft);
@@ -503,16 +465,33 @@ export const PurchaseRecord = () => {
               setToDate(toDateDraft);
               setPage(1);
             }}
-            className="h-[38px] rounded-[8px]"
+            style={{ height: 38, borderRadius: 8, border: '1.5px solid #1677ff', background: '#1677ff', color: '#fff', fontWeight: 600 }}
           >
-            Search
+            Filter
+          </Button>
+          <Button
+            onClick={() => {
+              setSearchDraft('');
+              setStatusDraft('all');
+              setFromDateDraft('');
+              setToDateDraft('');
+              setSearch('');
+              setStatusFilter('all');
+              setFromDate('');
+              setToDate('');
+              setPage(1);
+            }}
+            icon={<RefreshCw size={16} />}
+            style={{ height: 38, borderRadius: 8 }}
+          >
+            Clear
           </Button>
         </div>
-      </div>
 
-      <div className="overflow-x-auto">
-        <AppTable<Purchase>
-          columns={[
+        <div className="company-table-card">
+          <AppTable<Purchase>
+            className="company-table"
+            columns={[
             {
               title: 'Reference No.',
               dataIndex: 'refNo',
@@ -537,7 +516,7 @@ export const PurchaseRecord = () => {
               key: 'make',
               width: 140,
               render: (text: string) => (
-                <Text style={{ fontWeight: 600, color: token.colorText }}>{text}</Text>
+                <Text style={{ fontWeight: 600, color: token.colorText, fontSize: 14 }}>{text}</Text>
               ),
             },
             {
@@ -643,26 +622,26 @@ export const PurchaseRecord = () => {
           ]}
           dataSource={filteredPurchases}
           rowKey="id"
-          title="Purchase Records"
           pagination={false}
           loading={loading}
           scroll={{ x: 'max-content' }}
-        />
-      </div>
+          />
+          <div className="company-pagination">
+            <AppPagination
+              current={page}
+              pageSize={pageSize}
+              total={total}
+              onChange={(newPage, newPageSize) => {
+                setPage(newPage);
+                setPageSize(newPageSize);
+              }}
+            />
+          </div>
+        </div>
 
-      <AppPagination
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={(newPage, newPageSize) => {
-          setPage(newPage);
-          setPageSize(newPageSize);
-        }}
-      />
-
-      <div className="mt-2 text-xs text-gray-500">
-        Showing {filteredPurchases.length} of {counts.total} purchases
-      </div>
+        <div className="mt-2 text-xs text-gray-500">
+          Showing {filteredPurchases.length} of {counts.total} purchases
+        </div>
 
       {/* Purchase form drawer */}
       <AppDrawer
@@ -1052,6 +1031,6 @@ export const PurchaseRecord = () => {
           Are you sure you want to delete purchase {deleteTargetPurchase.refNo}? This cannot be undone.
         </Modal>
       )}
-    </div>
+      </div>
   );
 };

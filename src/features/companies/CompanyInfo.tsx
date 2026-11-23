@@ -199,16 +199,18 @@ export const CompanyInfo = () => {
             <Text className="company-hero-subtitle">Manage company details and configuration</Text>
           </div>
         </div>
-        <Button
-          onClick={() => {
-            setEditingCompany(null);
-            setDrawerOpen(true);
-          }}
-          icon={<Plus size={18} />}
-          className="company-add-button"
-        >
-          Add Company
-        </Button>
+        {companies.length === 0 && (
+          <Button
+            onClick={() => {
+              setEditingCompany(null);
+              setDrawerOpen(true);
+            }}
+            icon={<Plus size={18} />}
+            className="company-add-button"
+          >
+            Add Company
+          </Button>
+        )}
       </div>
 
       <div className="company-toolbar">
