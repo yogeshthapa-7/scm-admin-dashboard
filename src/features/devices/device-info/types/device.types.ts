@@ -15,6 +15,7 @@ export type DeviceSavePayload = Omit<DeviceItem, 'id'> & { id?: number | string 
 export interface FetchDevicesParams {
   purchaseMasterId?: number | string;
   deviceStatusId?: number | string;
+  serialNo?: string;
   start?: number;
   length?: number;
   signal?: AbortSignal;

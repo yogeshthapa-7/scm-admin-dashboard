@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
-import { Cpu, Delete, Edit } from 'lucide-react';
+import { Cpu, Delete, Edit, Search } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { deleteDevice, fetchDevices, saveDevice } from './services/device.service';
@@ -18,6 +18,7 @@ export const DeviceInfo = () => {
   const [statuses, setStatuses] = useState<{ id: number | string; statusName: string }[]>([]);
   const [purchaseFilter, setPurchaseFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [serialSearch, setSerialSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
@@ -32,6 +33,7 @@ export const DeviceInfo = () => {
       const result = await fetchDevices({
         purchaseMasterId: purchaseFilter === 'all' ? undefined : purchaseFilter,
         deviceStatusId: statusFilter === 'all' ? undefined : statusFilter,
+        serialNo: serialSearch.trim() || undefined,
         start: (page - 1) * pageSize,
         length: pageSize,
       });
@@ -42,7 +44,7 @@ export const DeviceInfo = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, purchaseFilter, statusFilter]);
+  }, [page, pageSize, purchaseFilter, statusFilter, serialSearch]);
 
   useEffect(() => {
     void loadDevices();
@@ -153,6 +155,14 @@ export const DeviceInfo = () => {
       </div>
 
       <div className="company-toolbar">
+        <Input
+          placeholder="Search serial no..."
+          value={serialSearch}
+          onChange={(e) => { setSerialSearch(e.target.value); setPage(1); }}
+          prefix={<Search size={17} />}
+          style={{ maxWidth: 280 }}
+          allowClear
+        />
         <Select value={purchaseFilter} onChange={(value) => { setPurchaseFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]} />
         <Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Status', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} />
       </div>

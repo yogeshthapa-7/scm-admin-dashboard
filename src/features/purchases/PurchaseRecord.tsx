@@ -360,10 +360,10 @@ export const PurchaseRecord = () => {
     try {
       const result = await approvePurchase(purchase.id);
       if (!result.success) throw new Error(result.message || 'Failed to approve purchase');
-      message.success(result.message || 'Purchase approved successfully');
       setApproveConfirmOpen(false);
       setApproveTargetPurchase(null);
       await refreshPurchases();
+      message.success('Purchase approved successfully.');
     } catch (error: any) {
       message.error(error?.response?.data?.message || error?.message || 'Failed to approve purchase');
     }

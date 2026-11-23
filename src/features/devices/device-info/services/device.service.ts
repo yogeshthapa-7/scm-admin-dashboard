@@ -41,12 +41,14 @@ export async function fetchDevices(params: FetchDevicesParams = {}): Promise<Fet
     params: {
       ...(params.purchaseMasterId ? { purchaseMasterId: params.purchaseMasterId } : {}),
       ...(params.deviceStatusId ? { deviceStatusId: params.deviceStatusId } : {}),
+      ...(params.serialNo ? { serialNo: params.serialNo } : {}),
     },
     signal: params.signal,
   });
   const items = extractItems(res.data).filter((item) => (
     (!params.purchaseMasterId || String(item.purchaseMasterId) === String(params.purchaseMasterId))
     && (!params.deviceStatusId || String(item.deviceStatusId) === String(params.deviceStatusId))
+    && (!params.serialNo || item.serialNo?.toLowerCase().includes(params.serialNo.toLowerCase()))
   ));
   const start = params.start ?? 0;
   const length = params.length ?? (items.length || 12);
