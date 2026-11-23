@@ -1,6 +1,5 @@
 ﻿import { useState, useMemo, useEffect } from 'react';
 import {
-  Card,
   Tag,
   Button,
   Typography,
@@ -438,7 +437,7 @@ export const PurchaseRecord = () => {
             prefix={<Search size={17} />}
             style={{ maxWidth: 280 }}
           />
-          <Button icon={<SlidersHorizontal size={17} />} onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>Filters</Button>
+          <Button className="company-filter-button" icon={<SlidersHorizontal size={17} />} onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>Filters</Button>
         </div>
 
         {filtersOpen && (
@@ -466,12 +465,14 @@ export const PurchaseRecord = () => {
               </label>
             </div>
             <Button
+              className="company-filter-apply-button"
               onClick={() => {
                 setSearch(searchDraft); setStatusFilter(statusDraft); setFromDate(fromDateDraft); setToDate(toDateDraft); setPage(1);
               }}
               style={{ height: 38, borderRadius: 8, border: '1.5px solid #1677ff', background: '#1677ff', color: '#fff', fontWeight: 600 }}
             >Filter</Button>
             <Button
+              className="company-clear-button"
               onClick={() => {
                 setSearchDraft(''); setStatusDraft('all'); setFromDateDraft(''); setToDateDraft('');
                 setSearch(''); setStatusFilter('all'); setFromDate(''); setToDate(''); setPage(1);

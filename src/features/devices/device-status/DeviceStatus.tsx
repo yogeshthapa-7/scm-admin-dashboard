@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Input, Modal, Space, Typography, message } from 'antd';
-import { Activity, Edit, Plus, Search, SlidersHorizontal, Trash } from 'lucide-react';
+import { Activity, Edit, Plus, Search, Trash } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { DeviceStatusFormItems } from './devicestatusform';
@@ -24,7 +24,6 @@ export const DeviceStatus = () => {
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const loadData = useCallback(async (targetPage: number, size: number, query = search) => {
     try {

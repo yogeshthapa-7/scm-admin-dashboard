@@ -4,7 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { CurtainTransition } from '@/shared/components/common/CurtainTransition';
 import { useTheme } from '@/context/ThemeContext';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { isAuthenticated } from '@/auth/services/auth-session';
 
 const { Content } = Layout;
@@ -30,11 +30,15 @@ export const DashboardLayout = () => {
     setCollapsed((prev) => !prev);
   };
 
+  const handleMobileClose = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sidebar
         open={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
+        onClose={handleMobileClose}
         collapsed={collapsed}
       />
       <Layout>

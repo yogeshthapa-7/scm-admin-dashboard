@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
+import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
 import { Building2, Trash, Edit, Plus, Search, SlidersHorizontal, RefreshCcw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
@@ -225,6 +225,7 @@ export const CompanyInfo = () => {
       <div className="company-toolbar">
         <Input
           allowClear
+          className="company-search-input"
           prefix={<Search size={17} />}
           value={search}
           placeholder="Search company name..."
@@ -236,6 +237,7 @@ export const CompanyInfo = () => {
           }}
         />
         <Button
+          className="company-filter-button"
           icon={<SlidersHorizontal size={17} />}
           aria-expanded={filtersOpen}
           onClick={() => setFiltersOpen((open) => !open)}
@@ -267,7 +269,7 @@ export const CompanyInfo = () => {
             onChange={(e) => setAddressDraft(e.target.value)}
             style={{ width: 200 }}
           />
-          <div style={{ flex: 1 }}>
+          {/* <div style={{ flex: 1 }}>
             <Text strong>Active filters: </Text>
             <Text type="secondary">
               {search.trim() ? `Name contains “${search.trim()}”` : 'No text filter'}
@@ -275,8 +277,9 @@ export const CompanyInfo = () => {
               {contactDraft.trim() ? ` · Contact contains “${contactDraft.trim()}”` : ''}
               {addressDraft.trim() ? ` · Address contains “${addressDraft.trim()}”` : ''}
             </Text>
-          </div>
+          </div> */}
           <Button
+            className="company-filter-apply-button"
             onClick={() => {
               setPage(1);
             }}
@@ -285,6 +288,7 @@ export const CompanyInfo = () => {
             Filter
           </Button>
           <Button
+            className="company-clear-button"
             onClick={() => {
               setEmailDraft('');
               setContactDraft('');
