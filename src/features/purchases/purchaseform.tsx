@@ -17,14 +17,12 @@ export interface PurchaseFormValues {
 interface PurchaseFormProps {
   deviceModels: { id: string; name: string; make: string }[];
   companyName: string;
-  companyInfoId: string;
   make: string;
 }
 
 export const PurchaseForm = ({
   deviceModels,
   companyName,
-  companyInfoId,
   make,
 }: PurchaseFormProps) => {
   return (
@@ -85,14 +83,6 @@ export const PurchaseForm = ({
             <Input
               disabled
               value={companyName}
-              className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
-            />
-          </Form.Item>
-
-          <Form.Item label="Company Info ID">
-            <Input
-              disabled
-              value={companyInfoId}
               className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
             />
           </Form.Item>

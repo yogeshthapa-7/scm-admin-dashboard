@@ -657,7 +657,11 @@ export const PurchaseRecord = () => {
           trnDate: viewingPurchase?.trnDate || editingPurchase?.trnDate || todayEnglish(),
           refNo: viewingPurchase?.refNo || editingPurchase?.refNo || '',
           narration: viewingPurchase?.narration || editingPurchase?.narration || '',
-          deviceModelId: viewingPurchase ? String(viewingPurchase.deviceModelId) : editingPurchase ? String(editingPurchase.deviceModelId) : '',
+          deviceModelId: viewingPurchase
+            ? String(viewingPurchase.deviceModelId)
+            : editingPurchase
+              ? String(editingPurchase.deviceModelId)
+              : deviceModelsWithMake[0]?.id || '',
           snPrefix: viewingPurchase?.snPrefix || editingPurchase?.snPrefix || 'SN',
           snPadding: viewingPurchase?.snPadding || editingPurchase?.snPadding || 3,
           totalItem: viewingPurchase?.totalItem || editingPurchase?.totalItem || 1,
@@ -963,7 +967,6 @@ export const PurchaseRecord = () => {
           <PurchaseForm
             deviceModels={deviceModelsWithMake}
             companyName={companyName}
-            companyInfoId={companyInfoId}
             make={companyMake}
           />
         )}
