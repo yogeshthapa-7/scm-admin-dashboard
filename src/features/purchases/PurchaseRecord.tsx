@@ -26,7 +26,10 @@ import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
 import { getAuthUser } from '@/auth/services/login.service';
 import {
+  approvePurchase,
   fetchPurchases,
+  generatePurchaseDevices,
+  rejectPurchase,
   savePurchase,
   deletePurchase,
 } from './services/purchase-master.service';
@@ -61,55 +64,6 @@ interface Purchase {
   rejectedReason?: string;
 }
 
-interface Device {
-  id: number;
-  purchaseMasterId: number;
-  serialNumber: string;
-  model: string;
-  status: 'Active' | 'Rejected';
-  rejectReason?: string;
-}
-
-const PURCHASE_WORKFLOW_KEY = 'purchase_workflow_overrides';
-const GENERATED_DEVICES_KEY = 'generated_devices_fallback';
-
-function loadWorkflowOverrides(): Record<string, Partial<Purchase>> {
-  try {
-    const raw = localStorage.getItem(PURCHASE_WORKFLOW_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveWorkflowOverrides(overrides: Record<string, Partial<Purchase>>) {
-  localStorage.setItem(PURCHASE_WORKFLOW_KEY, JSON.stringify(overrides));
-}
-
-function saveWorkflowOverride(purchase: Purchase) {
-  const overrides = loadWorkflowOverrides();
-  overrides[String(purchase.id)] = {
-    status: purchase.status,
-    rejectedDate: purchase.rejectedDate,
-    rejectedBy: purchase.rejectedBy,
-    rejectedReason: purchase.rejectedReason,
-  };
-  saveWorkflowOverrides(overrides);
-}
-
-function loadGeneratedDevices(): Device[] {
-  try {
-    const raw = localStorage.getItem(GENERATED_DEVICES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveGeneratedDevices(devices: Device[]) {
-  localStorage.setItem(GENERATED_DEVICES_KEY, JSON.stringify(devices));
-}
-
 interface CompanyInfoItem {
   id: string;
   fullName: string;
@@ -135,11 +89,11 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
 };
 
 const STATUS_STYLES: Record<PurchaseStatus, string> = {
-  0: 'bg-red-50 text-red-600 border border-red-100',
-  1: 'bg-green-50 text-green-700 border border-green-100',
-  2: 'bg-amber-50 text-amber-700 border border-amber-100',
-  3: 'bg-blue-50 text-blue-700 border border-blue-100',
-  4: 'bg-red-50 text-red-700 border border-red-200',
+  0: '#ff7875',
+  1: '#73d13d',
+  2: '#ffc53d',
+  3: '#69b1ff',
+  4: '#ff7875',
 };
 
 function generateSerialNumber(prefix: string, padding: number, number: number) {
@@ -158,7 +112,6 @@ function getSerialNumberValue(serialNumber: string, prefix: string): number | nu
 function getNextSnStart(
   prefix: string,
   purchases: Purchase[],
-  devices: Device[],
   excludePurchaseId?: number | null
 ) {
   const normalizedPrefix = String(prefix || '').trim();
@@ -175,11 +128,6 @@ function getNextSnStart(
     if (end > maxEnd) maxEnd = end;
   });
 
-  devices.forEach((d) => {
-    const value = getSerialNumberValue(d.serialNumber || '', normalizedPrefix);
-    if (value != null && value > maxEnd) maxEnd = value;
-  });
-
   return maxEnd + 1;
 }
 
@@ -189,7 +137,6 @@ export const PurchaseRecord = () => {
   const isDark = mode === 'dark';
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [devices, setDevices] = useState<Device[]>(loadGeneratedDevices);
   const [companyInfo, setCompanyInfo] = useState<CompanyInfoItem | null>(null);
   const [deviceModels, setDeviceModels] = useState<DeviceModelItem[]>([]);
   const [page, setPage] = useState(1);
@@ -237,9 +184,6 @@ export const PurchaseRecord = () => {
   const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
   const [viewingPurchase, setViewingPurchase] = useState<Purchase | null>(null);
   const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectingDevice, setRejectingDevice] = useState<Device | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteTargetPurchase, setDeleteTargetPurchase] = useState<Purchase | null>(null);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
@@ -260,11 +204,7 @@ export const PurchaseRecord = () => {
       length: 100000,
     }).then((result) => {
       if (!cancelled) {
-        const overrides = loadWorkflowOverrides();
-        setPurchases(result.items.map((purchase) => ({
-          ...purchase,
-          ...(overrides[String(purchase.id)] || {}),
-        })));
+        setPurchases(result.items);
         setTotal(result.items.length);
         setLoading(false);
       }
@@ -319,15 +259,14 @@ export const PurchaseRecord = () => {
     const snPrefix = String(values.snPrefix || '').trim();
     const snPadding = Number(values.snPadding);
     const totalItem = Number(values.totalItem);
-    const allPurchasesResult = await fetchPurchases({ length: 100000 });
+    const allPurchasesResult = await fetchPurchases({ length: 999 });
     const allPurchases = allPurchasesResult.items;
-    const snStart = getNextSnStart(snPrefix, allPurchases, devices, editingPurchase?.id ?? null);
+    const snStart = getNextSnStart(snPrefix, allPurchases, editingPurchase?.id ?? null);
 
     const newSerials = Array.from({ length: totalItem }, (_, index) =>
       generateSerialNumber(snPrefix, snPadding, snStart + index)
     );
     const taken = new Set<string>();
-    devices.forEach((d) => taken.add(d.serialNumber));
     allPurchases.forEach((p) => {
       if (p.status === 0) return;
       if (editingPurchase && p.id === editingPurchase.id) return;
@@ -386,58 +325,40 @@ export const PurchaseRecord = () => {
     const serials = Array.from({ length: totalItem }, (_, index) =>
       generateSerialNumber(purchase.snPrefix, purchase.snPadding, snStart + index)
     );
-    const alreadyGenerated = devices.some((d) => d.purchaseMasterId === purchase.id);
 
-    const taken = new Set<string>();
-    devices.forEach((d) => {
-      if (d.purchaseMasterId !== purchase.id) taken.add(d.serialNumber);
-    });
-    purchases.forEach((p) => {
-      if (p.status === 0 || p.id === purchase.id) return;
-      const pStart = p.snStart ?? 1;
-      for (let i = 0; i < p.totalItem; i += 1) {
-        taken.add(generateSerialNumber(p.snPrefix, p.snPadding, pStart + i));
-      }
-    });
-    const conflictSerial = serials.find((serial) => taken.has(serial));
+    return { snStart, totalItem, first, last, serials };
+  };
 
-    return { snStart, totalItem, first, last, serials, alreadyGenerated, conflictSerial };
+  const refreshPurchases = async () => {
+    const refreshed = await fetchPurchases({
+      search,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+      start: 0,
+      length: 100000,
+    });
+    setPurchases(refreshed.items);
+    setTotal(refreshed.items.length);
+    const updated = refreshed.items.find((item) => item.id === viewingPurchase?.id) ?? null;
+    const selectedUpdated = refreshed.items.find((item) => item.id === selectedPurchase?.id) ?? null;
+    setViewingPurchase(updated);
+    setSelectedPurchase(selectedUpdated);
   };
 
   const confirmGenerateDevices = async (purchase: Purchase) => {
     if (purchase.status !== 1 || generatingDevices) return;
-
-    const info = getGenerationInfo(purchase);
-    if (info.alreadyGenerated || info.conflictSerial || info.totalItem <= 0) return;
-
     setGeneratingDevices(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
-    const newDevices: Device[] = info.serials.map((serialNumber, index) => ({
-      id: Date.now() + index,
-      purchaseMasterId: purchase.id,
-      serialNumber,
-      model: purchase.deviceModel,
-      status: 'Active',
-    }));
-
-    setDevices((prev) => {
-      const newDeviceList = [...prev, ...newDevices];
-      saveGeneratedDevices(newDeviceList);
-      return newDeviceList;
-    });
-
-    const generated: Purchase = { ...purchase, status: 3 as PurchaseStatus };
-    saveWorkflowOverride(generated);
-    setPurchases((prev) => {
-      const updated = prev.map((p) => (p.id === purchase.id ? generated : p));
-      return updated;
-    });
-
-    setSelectedPurchase((prev) => (prev?.id === purchase.id ? generated : prev));
-    setViewingPurchase((prev) => (prev?.id === purchase.id ? generated : prev));
-    setGeneratingDevices(false);
-    setShowGenerateForm(false);
+    try {
+      const result = await generatePurchaseDevices(purchase.id);
+      if (!result.success) throw new Error(result.message || 'Failed to generate devices');
+      message.success(result.message || 'Devices generated successfully');
+      await refreshPurchases();
+      setShowGenerateForm(false);
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || error?.message || 'Failed to generate devices');
+    } finally {
+      setGeneratingDevices(false);
+    }
   };
 
   const handleDeletePurchase = async (purchase: Purchase) => {
@@ -456,54 +377,32 @@ export const PurchaseRecord = () => {
     }
   };
 
-  const handleApprovePurchase = (purchase: Purchase) => {
+  const handleApprovePurchase = async (purchase: Purchase) => {
     if (purchase.status !== 2) return;
-    const updated = purchases.map((p) =>
-      p.id === purchase.id ? { ...p, status: 1 as PurchaseStatus } : p
-    );
-    setPurchases(updated);
-    saveWorkflowOverride({ ...purchase, status: 1 as PurchaseStatus });
-    setApproveConfirmOpen(false);
-    setApproveTargetPurchase(null);
-    if (viewingPurchase?.id === purchase.id) {
-      setViewingPurchase({ ...purchase, status: 1 as PurchaseStatus });
-    }
-    if (selectedPurchase?.id === purchase.id) {
-      setSelectedPurchase({ ...purchase, status: 1 as PurchaseStatus });
+    try {
+      const result = await approvePurchase(purchase.id);
+      if (!result.success) throw new Error(result.message || 'Failed to approve purchase');
+      message.success(result.message || 'Purchase approved successfully');
+      setApproveConfirmOpen(false);
+      setApproveTargetPurchase(null);
+      await refreshPurchases();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || error?.message || 'Failed to approve purchase');
     }
   };
 
   const handleRejectPurchase = async (purchase: Purchase, rejectedReason: string) => {
     if (purchase.status !== 1 && purchase.status !== 2) return;
-    const currentUser = getAuthUser();
-    const updatedPurchase: Purchase = {
-      ...purchase,
-      status: 4 as PurchaseStatus,
-      rejectedDate: todayEnglish(),
-      rejectedBy: currentUser?.name || currentUser?.username || 'Current User',
-      rejectedReason,
-    };
-    const updated = purchases.map((p) => (p.id === purchase.id ? updatedPurchase : p));
-    setPurchases(updated);
-    saveWorkflowOverride(updatedPurchase);
-    setShowRejectForm(false);
-    setRejectFormReason('');
-    if (viewingPurchase?.id === purchase.id) setViewingPurchase(updatedPurchase);
-  };
-
-  const handleRejectDevice = () => {
-    if (!rejectingDevice || !rejectReason.trim()) return;
-
-    setDevices((prev) =>
-      prev.map((d) =>
-        d.id === rejectingDevice.id
-          ? { ...d, status: 'Rejected', rejectReason: rejectReason.trim() }
-          : d
-      )
-    );
-    setShowRejectModal(false);
-    setRejectingDevice(null);
-    setRejectReason('');
+    try {
+      const result = await rejectPurchase(purchase.id, rejectedReason);
+      if (!result.success) throw new Error(result.message || 'Failed to reject purchase');
+      message.success(result.message || 'Purchase rejected successfully');
+      setShowRejectForm(false);
+      setRejectFormReason('');
+      await refreshPurchases();
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || error?.message || 'Failed to reject purchase');
+    }
   };
 
   const statCards = [
@@ -702,9 +601,19 @@ export const PurchaseRecord = () => {
               key: 'status',
               width: 120,
               render: (status: PurchaseStatus) => (
-                <Tag className={STATUS_STYLES[status]} style={{ fontWeight: 600 }}>
-                  {STATUS_LABELS[status]}
-                </Tag>
+                <div
+                  style={{
+                    backgroundColor: STATUS_STYLES[status] || '#e5e7eb',
+                    padding: '4px 8px',
+                    borderRadius: 4,
+                    color: '#000',
+                    fontWeight: 600,
+                    display: 'inline-block',
+                    minWidth: '120px',
+                  }}
+                >
+                  {STATUS_LABELS[status] ?? String(status)}
+                </div>
               ),
             },
             {
@@ -968,18 +877,23 @@ export const PurchaseRecord = () => {
             )}
 
             {showGenerateForm && viewingPurchase.status === 1 && (() => {
-              const info = getGenerationInfo(viewingPurchase);
-              const canGenerate = !info.alreadyGenerated && !info.conflictSerial && info.totalItem > 0;
-              const preview = info.serials.slice(0, 8);
-              const remaining = Math.max(info.serials.length - preview.length, 0);
-              const isSingle = info.totalItem === 1;
+              const snStart = viewingPurchase.snStart ?? 1;
+              const totalItem = Number(viewingPurchase.totalItem || 0);
+              const first = generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, snStart);
+              const last = generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, snStart + Math.max(totalItem, 1) - 1);
+              const serials = Array.from({ length: totalItem }, (_, index) =>
+                generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, snStart + index)
+              );
+              const preview = serials.slice(0, 8);
+              const remaining = Math.max(serials.length - preview.length, 0);
+              const isSingle = totalItem === 1;
 
               return (
                 <div className="rounded-xl border border-blue-200 bg-white p-4 space-y-4">
                   <div>
                     <h3 className="font-semibold text-gray-800">Generate Devices</h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      Review the details below, then confirm to create device records for this purchase.
+                      Review the details below, then confirm to generate devices for this purchase.
                     </p>
                   </div>
 
@@ -997,7 +911,7 @@ export const PurchaseRecord = () => {
                     <div className="sm:col-span-2 rounded-lg border border-blue-100 bg-blue-50 p-3">
                       <p className="text-xs text-blue-700">Devices to create</p>
                       <p className="mt-1 text-base font-semibold text-blue-800">
-                        {info.totalItem} device{isSingle ? '' : 's'} will be generated and marked as Available
+                        {totalItem} device{isSingle ? '' : 's'} will be generated
                       </p>
                     </div>
                   </div>
@@ -1015,25 +929,25 @@ export const PurchaseRecord = () => {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Starting number</p>
-                        <p className="mt-1 text-sm font-medium text-gray-800">{info.snStart}</p>
+                        <p className="mt-1 text-sm font-medium text-gray-800">{snStart}</p>
                       </div>
                     </div>
 
                     {isSingle ? (
                       <div className="rounded-lg bg-gray-50 p-3">
                         <p className="text-xs text-gray-500">Serial number</p>
-                        <p className="mt-1 font-mono text-base font-semibold text-gray-800">{info.first}</p>
+                        <p className="mt-1 font-mono text-base font-semibold text-gray-800">{first}</p>
                       </div>
                     ) : (
                       <>
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div className="rounded-lg bg-gray-50 p-3">
                             <p className="text-xs text-gray-500">First serial</p>
-                            <p className="mt-1 font-mono font-semibold text-gray-800">{info.first}</p>
+                            <p className="mt-1 font-mono font-semibold text-gray-800">{first}</p>
                           </div>
                           <div className="rounded-lg bg-gray-50 p-3">
                             <p className="text-xs text-gray-500">Last serial</p>
-                            <p className="mt-1 font-mono font-semibold text-gray-800">{info.last}</p>
+                            <p className="mt-1 font-mono font-semibold text-gray-800">{last}</p>
                           </div>
                         </div>
                         {preview.length > 0 && (
@@ -1052,16 +966,6 @@ export const PurchaseRecord = () => {
                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
                       After confirmation, this purchase will be marked as <strong>Device Generated</strong>.
                     </div>
-                    {info.alreadyGenerated && (
-                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                        Devices have already been generated for this purchase.
-                      </div>
-                    )}
-                    {!info.alreadyGenerated && info.conflictSerial && (
-                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                        Serial conflict detected: <strong>{info.conflictSerial}</strong> already exists. Resolve the conflict before generating.
-                      </div>
-                    )}
                   </div>
 
                   <div className="flex justify-end gap-2">
@@ -1075,15 +979,15 @@ export const PurchaseRecord = () => {
                     <Button
                       onClick={() => confirmGenerateDevices(viewingPurchase)}
                       loading={generatingDevices}
-                      disabled={!canGenerate}
+                      disabled={generatingDevices || totalItem <= 0}
                       style={{
                         height: 36,
                         borderRadius: 8,
                         border: '1.5px solid #52c41a',
-                        background: canGenerate ? '#52c41a' : '#b7eb8f',
+                        background: generatingDevices || totalItem <= 0 ? '#b7eb8f' : '#52c41a',
                         color: '#fff',
                         fontWeight: 600,
-                        boxShadow: canGenerate ? '0 4px 8px rgba(82,196,26,0.2)' : 'none',
+                        boxShadow: generatingDevices || totalItem <= 0 ? 'none' : '0 4px 8px rgba(82,196,26,0.2)',
                       }}
                     >
                       Confirm &amp; Generate
@@ -1094,64 +998,12 @@ export const PurchaseRecord = () => {
             })()}
 
             {viewingPurchase.status === 3 && (
-              <div>
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800">Generated Devices</h3>
-                  <span className="text-xs text-gray-500">{devices.filter((d) => d.purchaseMasterId === viewingPurchase.id).length} records</span>
-                </div>
-
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <AppTable<Device>
-                    columns={[
-                      {
-                        title: 'Device ID',
-                        dataIndex: 'id',
-                        key: 'id',
-                        width: 100,
-                        render: (text: number) => <Text style={{ color: '#666' }}>{text}</Text>,
-                      },
-                      {
-                        title: 'Serial Number',
-                        dataIndex: 'serialNumber',
-                        key: 'serialNumber',
-                        width: 160,
-                        render: (text: string) => (
-                          <Text style={{ fontFamily: 'monospace', fontWeight: 600, color: '#172033' }}>
-                            {text}
-                          </Text>
-                        ),
-                      },
-                      {
-                        title: 'Model',
-                        dataIndex: 'model',
-                        key: 'model',
-                        width: 160,
-                        render: (text: string) => <Text style={{ color: '#666' }}>{text}</Text>,
-                      },
-                      {
-                        title: 'Status',
-                        dataIndex: 'status',
-                        key: 'status',
-                        width: 120,
-                        render: (status: string) => (
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                              status === 'Rejected'
-                                ? 'bg-red-50 text-red-600'
-                                : 'bg-green-50 text-green-700'
-                            }`}
-                          >
-                            {status}
-                          </span>
-                        ),
-                      },
-                    ]}
-                    dataSource={devices.filter((d) => d.purchaseMasterId === viewingPurchase.id)}
-                    rowKey="id"
-                    pagination={false}
-                    loading={false}
-                    bordered={false}
-                  />
+              <div className="space-y-4">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                  <h3 className="font-semibold text-blue-800">Devices Generated</h3>
+                  <p className="mt-1 text-sm text-blue-700">
+                    Devices for this purchase have been generated. View them in the Device page.
+                  </p>
                 </div>
               </div>
             )}
@@ -1221,70 +1073,6 @@ export const PurchaseRecord = () => {
           ]}
         >
           Are you sure you want to delete purchase {deleteTargetPurchase.refNo}? This cannot be undone.
-        </Modal>
-      )}
-
-      {/* Reject device modal */}
-      {showRejectModal && rejectingDevice && (
-        <Modal
-          open
-          title="Reject Device"
-          onCancel={() => setShowRejectModal(false)}
-          width="max-w-lg"
-          className="
-            rounded-xl border border-gray-200 bg-white shadow-xl
-          "
-          footer={[
-            <Button
-              key="cancel"
-              onClick={() => setShowRejectModal(false)}
-              className="
-                h-[38px] rounded-[8px] border-[1.5px] border-gray-200
-                bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all
-              "
-            >
-              Cancel
-            </Button>,
-            <Button
-              key="confirm"
-              onClick={handleRejectDevice}
-              disabled={!rejectReason.trim()}
-              className="
-                h-[38px] rounded-[8px] bg-[#f5222d] border-[#f5222d] text-white
-                font-medium px-5 shadow-[0_4px_8px_rgba(245,34,45,0.2)]
-                hover:bg-[#cf1322] transition-all disabled:opacity-50 disabled:cursor-not-allowed
-              "
-            >
-              Confirm Rejection
-            </Button>,
-          ]}
-        >
-          <div className="space-y-5">
-            <div className="rounded-lg bg-gray-50 p-4">
-              <p className="text-xs text-gray-500">Serial Number</p>
-              <p className="mt-1 font-mono font-semibold text-gray-800">
-                {rejectingDevice.serialNumber}
-              </p>
-              <p className="mt-3 text-xs text-gray-500">Device Model</p>
-              <p className="mt-1 text-sm font-medium text-gray-800">
-                {rejectingDevice.model}
-              </p>
-            </div>
-
-            <Form.Item
-              name="rejectReason"
-              label="Rejection Reason"
-              rules={[{ required: true, message: 'Please enter rejection reason' }]}
-            >
-              <Input.TextArea
-                rows={4}
-                value={rejectReason}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setRejectReason(e.target.value)}
-                placeholder="Please provide the reason for rejecting this device..."
-                className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
-            </Form.Item>
-          </div>
         </Modal>
       )}
     </div>

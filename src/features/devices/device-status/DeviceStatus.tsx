@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Modal, Space, Typography, message } from 'antd';
-import { Delete, Edit, Plus } from 'lucide-react';
+import { Button, Card, Input, Modal, Space, Typography, message } from 'antd';
+import { Activity, Edit, Plus, Search, SlidersHorizontal, Trash } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { DeviceStatusFormItems } from './devicestatusform';
@@ -23,12 +23,14 @@ export const DeviceStatus = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const loadData = useCallback(async (targetPage: number, size: number) => {
+  const loadData = useCallback(async (targetPage: number, size: number, query = search) => {
     try {
       setLoading(true);
       const start = (targetPage - 1) * size;
-      const res = await fetchDeviceStatus({ start, length: size });
+      const res = await fetchDeviceStatus({ start, length: size, search: query });
       setStatuses(res.items);
       setTotal(res.total);
     } catch (error: any) {
@@ -36,11 +38,11 @@ export const DeviceStatus = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
   useEffect(() => {
-    void loadData(page, pageSize);
-  }, [loadData, page, pageSize]);
+    void loadData(page, pageSize, search);
+  }, [loadData, page, pageSize, search]);
 
   const handleSaveStatus = async (values: Record<string, unknown>) => {
     const payload = {
@@ -61,7 +63,7 @@ export const DeviceStatus = () => {
       setEditingStatus(null);
       const nextPage = editingStatus ? page : 1;
       setPage(nextPage);
-      await loadData(nextPage, pageSize);
+      await loadData(nextPage, pageSize, search);
     } catch (error: any) {
       const msg = error?.response?.data?.message || error?.response?.data?.title || error?.message || 'Failed to save device status';
       message.error(msg);
@@ -87,7 +89,7 @@ export const DeviceStatus = () => {
       message.success(res.message || 'Device status deleted');
       setDeleteConfirmOpen(false);
       setDeleteTargetId(null);
-      await loadData(page, pageSize);
+      await loadData(page, pageSize, search);
     } catch (error: any) {
       message.error(error?.response?.data?.message || error?.message || 'Failed to delete device status');
     } finally {
@@ -104,10 +106,11 @@ export const DeviceStatus = () => {
       render: (text: string, record: DeviceStatusItem) => (
         <div
           style={{
-            backgroundColor: record.colorCode || '#e5e7eb',
-            padding: '4px 8px',
-            borderRadius: 4,
-            color: '#000',
+            backgroundColor: `${record.colorCode || '#e5e7eb'}22`,
+            border: `1px solid ${record.colorCode || '#d1d5db'}55`,
+            padding: '5px 12px',
+            borderRadius: 999,
+            color: isDark ? '#f3f4f6' : '#243b5a',
             fontWeight: 600,
             display: 'inline-block',
             minWidth: '120px',
@@ -121,12 +124,12 @@ export const DeviceStatus = () => {
       title: 'Code',
       dataIndex: 'code',
       key: 'code',
-      width: 120,
+      width: 150,
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 180,
+      width: 190,
       fixed: 'right' as const,
       render: (_: unknown, record: DeviceStatusItem) => (
         <Space size="small">
@@ -149,7 +152,7 @@ export const DeviceStatus = () => {
           </Button>
           <Button
             onClick={() => handleDeleteConfirm(record.id)}
-            icon={<Delete size={16} />}
+            icon={<Trash size={16} />}
             style={{
               height: 32,
               borderRadius: 6,
@@ -172,22 +175,28 @@ export const DeviceStatus = () => {
   return (
     <div>
       <Card
+        className="device-status-hero"
         style={{
-          marginBottom: 32,
+          marginBottom: 24,
           background: isDark
             ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
             : 'linear-gradient(135deg, #0d3b7a 0%, #1a4d8f 60%, #2563a8 100%)',
           border: 'none',
         }}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <Title level={2} style={{ color: '#fff', margin: 0 }}>
-              Device Status
-            </Title>
-            <Text style={{ color: 'rgba(255,255,255,0.75)' }}>
-              Manage device status types and their display order
-            </Text>
+        <div className="flex flex-wrap items-center justify-between gap-5">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="device-status-hero-icon" aria-hidden="true">
+              <Activity size={30} strokeWidth={1.8} />
+            </div>
+            <div>
+              <Title level={2} style={{ color: '#fff', margin: 0, fontSize: 'clamp(1.35rem, 2.4vw, 2rem)' }}>
+                Device Status
+              </Title>
+              <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 14 }}>
+                Manage device status types and their display order
+              </Text>
+            </div>
           </div>
           <Button
             onClick={() => {
@@ -195,36 +204,79 @@ export const DeviceStatus = () => {
               setDrawerOpen(true);
             }}
             icon={<Plus size={18} />}
-            className="
-              h-[38px] rounded-[8px] border-[1.5px] border-white/[0.3]
-              bg-white/[0.15] text-white font-medium px-5
-              hover:bg-white/[0.25] transition-all
-            "
+            className="device-status-add-button"
           >
             Add Device Status
           </Button>
         </div>
       </Card>
 
-      <AppTable<DeviceStatusItem>
-        columns={columns}
-        dataSource={statuses}
-        rowKey="id"
-        title="Device Status Types"
-        emptyDescription="No device status types found"
-        pagination={false}
-        loading={loading}
-      />
+      <div className="device-status-toolbar">
+        <Input
+          allowClear
+          prefix={<Search size={18} />}
+          value={search}
+          placeholder="Search status name or code..."
+          aria-label="Search status name or code"
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+        />
+        <Button
+          className="device-status-filter-button"
+          icon={<SlidersHorizontal size={17} />}
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          Filters
+        </Button>
+      </div>
 
-      <AppPagination
-        current={page}
-        pageSize={pageSize}
-        total={total}
-        onChange={(newPage, newPageSize) => {
-          setPage(newPage);
-          setPageSize(newPageSize);
-        }}
-      />
+      {filtersOpen && (
+        <div className="device-status-filter-panel">
+          <div>
+            <Text className="device-status-filter-label">Active filters</Text>
+            <Text type="secondary">
+              {search.trim() ? `Status name or code contains “${search.trim()}”` : 'No filters applied'}
+            </Text>
+          </div>
+          <Button
+            size="small"
+            disabled={!search.trim()}
+            onClick={() => {
+              setSearch('');
+              setPage(1);
+            }}
+          >
+            Clear filters
+          </Button>
+        </div>
+      )}
+
+      <div className="device-status-table-card">
+        <AppTable<DeviceStatusItem>
+          className="device-status-table"
+          columns={columns}
+          dataSource={statuses}
+          rowKey="id"
+          emptyDescription="No device status types found"
+          pagination={false}
+          loading={loading}
+        />
+
+        <div className="device-status-pagination">
+          <AppPagination
+            current={page}
+            pageSize={pageSize}
+            total={total}
+            onChange={(newPage, newPageSize) => {
+              setPage(newPage);
+              setPageSize(newPageSize);
+            }}
+          />
+        </div>
+      </div>
 
       <Modal
         open={deleteConfirmOpen}

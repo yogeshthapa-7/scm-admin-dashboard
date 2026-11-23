@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import api from '@/interceptors/interceptors';
+import { getAuthUser } from '@/auth/services/auth-session';
+import { todayEnglish } from '@/utils/dateConverter';
 import type {
   Purchase,
   PurchaseSavePayload,
@@ -17,6 +19,9 @@ export const GET_BY_ID_URL = `${API_BASE_URL}${RESOURCE_PATH}/GetPurchaseById`;
 export const CREATE_URL = `${API_BASE_URL}${RESOURCE_PATH}/CreatePurchase`;
 export const UPDATE_URL = `${API_BASE_URL}${RESOURCE_PATH}/UpdatePurchase`;
 export const DELETE_URL = `${API_BASE_URL}${RESOURCE_PATH}/DeletePurchase`;
+export const APPROVE_URL = (id: number | string) => `${API_BASE_URL}${RESOURCE_PATH}/${id}/approve`;
+export const REJECT_URL = (id: number | string) => `${API_BASE_URL}${RESOURCE_PATH}/${id}/reject`;
+export const GENERATE_DEVICES_URL = (id: number | string) => `${API_BASE_URL}${RESOURCE_PATH}/${id}/generatedevices`;
 
 function toItem(raw: any): Purchase {
   const rawDate = raw?.tranDate ?? raw?.trnDate ?? raw?.TranDate ?? raw?.TrnDate ?? '';
@@ -146,6 +151,34 @@ export async function deletePurchase(id: number | string): Promise<{ success: bo
   return { success: true, message: extractMessage(data, 'Purchase deleted successfully'), data };
 }
 
+export async function approvePurchase(id: number | string): Promise<{ success: boolean; message?: string; data?: unknown }> {
+  const res = await api.post(APPROVE_URL(id));
+  const data = res.data;
+  if (responseFailed(data)) return { success: false, message: extractMessage(data, 'Failed to approve purchase'), data };
+  return { success: true, message: extractMessage(data, 'Purchase approved successfully'), data };
+}
+
+export async function rejectPurchase(id: number | string, reason: string): Promise<{ success: boolean; message?: string; data?: unknown }> {
+  const user = getAuthUser();
+  const rejectedBy = String(user?.id ?? user?.username ?? user?.name ?? '').trim();
+  const res = await api.post(REJECT_URL(id), {
+    id: Number(id),
+    rejectedReason: reason,
+    rejectedDate: todayEnglish(),
+    rejectedBy,
+  });
+  const data = res.data;
+  if (responseFailed(data)) return { success: false, message: extractMessage(data, 'Failed to reject purchase'), data };
+  return { success: true, message: extractMessage(data, 'Purchase rejected successfully'), data };
+}
+
+export async function generatePurchaseDevices(id: number | string): Promise<{ success: boolean; message?: string; data?: unknown }> {
+  const res = await api.post(GENERATE_DEVICES_URL(id));
+  const data = res.data;
+  if (responseFailed(data)) return { success: false, message: extractMessage(data, 'Failed to generate devices'), data };
+  return { success: true, message: extractMessage(data, 'Devices generated successfully'), data };
+}
+
 export const purchaseMasterService = {
   serverSearch: (body: PurchaseServerSearchRequest, signal?: AbortSignal) => api.get<ApiListResponse<Purchase>>(API_URL, { params: body, signal }),
   save: savePurchase,
@@ -156,4 +189,7 @@ export const purchaseMasterService = {
   fetchPurchaseSelectList,
   savePurchase,
   deletePurchase,
+  approvePurchase,
+  rejectPurchase,
+  generatePurchaseDevices,
 };

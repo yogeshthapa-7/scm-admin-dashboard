@@ -48,11 +48,10 @@ export const Navbar = ({ onMenuClick }: { onMenuClick: () => void }) => {
         <div className="flex min-w-0 items-center gap-3">
           <Button
             type="text"
-            aria-label="Open navigation menu"
+            aria-label="Toggle navigation menu"
             icon={<MenuIcon size={22} />}
             onClick={onMenuClick}
-            className="mobile-menu-button shrink-0"
-            style={{ color: isDark ? '#e8e8e8' : '#172033' }}
+            style={{ color: isDark ? '#e8e8e8' : '#172033', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
           />
           <Typography.Text
             style={{ color: isDark ? '#e8e8e8' : '#172033' }}

@@ -12,8 +12,8 @@ export const ThemeToggle = () => {
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       className="relative flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer"
       style={{
-        width: 42,
-        height: 42,
+        width: 37,
+        height: 37,
         background: isDark
           ? 'linear-gradient(135deg, #2a2a4a, #1a1a2e)'
           : 'linear-gradient(135deg, #f0f0f0, #d9d9d9)',

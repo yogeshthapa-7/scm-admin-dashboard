@@ -14,6 +14,7 @@ export const DashboardLayout = () => {
   const isDark = mode === 'dark';
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const authenticated = isAuthenticated();
 
@@ -21,11 +22,23 @@ export const DashboardLayout = () => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
+  const handleMenuClick = () => {
+    if (window.innerWidth <= 1024) {
+      setMobileMenuOpen(true);
+      return;
+    }
+    setCollapsed((prev) => !prev);
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sidebar open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+      <Sidebar
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        collapsed={collapsed}
+      />
       <Layout>
-        <Navbar onMenuClick={() => setMobileMenuOpen(true)} />
+        <Navbar onMenuClick={handleMenuClick} />
         <Content
           className={`content-area p-6 lg:p-8 xl:p-10 ${isDark ? 'dark' : ''}`}
           style={{ transition: 'background 0.5s ease' }}

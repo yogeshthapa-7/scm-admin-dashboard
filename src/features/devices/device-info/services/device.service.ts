@@ -5,7 +5,7 @@ import type { DeviceItem, DeviceSavePayload, FetchDevicesParams, FetchDevicesRes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 export const API_URL = `${API_BASE_URL}/Device/GetAllDevice`;
 export const GET_BY_ID_URL = `${API_BASE_URL}/Device/GetDeviceById`;
-export const CREATE_URL = `${API_BASE_URL}/Device/CreateDevice`;
+// export const CREATE_URL = `${API_BASE_URL}/Device/CreateDevice`;
 export const UPDATE_URL = `${API_BASE_URL}/Device/UpdateDevice`;
 export const DELETE_URL = `${API_BASE_URL}/Device/DeleteDevice`;
 const GENERATED_DEVICES_KEY = 'generated_devices_fallback';
@@ -85,31 +85,28 @@ export async function fetchDevices(params: FetchDevicesParams = {}): Promise<Fet
 }
 
 export async function saveDevice(payload: DeviceSavePayload): Promise<{ success: boolean; message?: string; data?: unknown }> {
-  const isUpdate = payload.id !== undefined && payload.id !== null && payload.id !== '' && Number(payload.id) !== 0;
+  if (payload.id === undefined || payload.id === null || payload.id === '' || Number(payload.id) === 0) {
+    return { success: false, message: 'Device id is required for update' };
+  }
   const id = typeof payload.id === 'string' && /^\d+$/.test(payload.id) ? Number(payload.id) : payload.id;
   const purchaseMasterId = typeof payload.purchaseMasterId === 'string' && /^\d+$/.test(payload.purchaseMasterId) ? Number(payload.purchaseMasterId) : payload.purchaseMasterId;
   const deviceStatusId = typeof payload.deviceStatusId === 'string' && /^\d+$/.test(payload.deviceStatusId) ? Number(payload.deviceStatusId) : payload.deviceStatusId;
 
   const body: Record<string, unknown> = {
+    id,
+    Id: id,
     purchaseMasterId,
     serialNo: String(payload.serialNo ?? '').trim(),
     deviceStatusId,
   };
 
-  if (isUpdate) {
-    body.id = id;
-    body.Id = id;
-  }
-
-  const res = isUpdate
-    ? await api.put(`${UPDATE_URL}/${payload.id}?action=UpdateDevice`, body)
-    : await api.post(CREATE_URL, body);
+  const res = await api.put(`${UPDATE_URL}/${payload.id}?action=UpdateDevice`, body);
 
   if (failed(res.data)) {
-    return { success: false, message: messageOf(res.data, 'Failed to save device'), data: res.data };
+    return { success: false, message: messageOf(res.data, 'Failed to update device'), data: res.data };
   }
 
-  return { success: true, message: messageOf(res.data, 'Device saved successfully'), data: res.data };
+  return { success: true, message: messageOf(res.data, 'Device updated successfully'), data: res.data };
 }
 
 export async function deleteDevice(id: number | string): Promise<{ success: boolean; message?: string; data?: unknown }> {

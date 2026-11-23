@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
-import { Delete, Edit, Plus } from 'lucide-react';
+import { Delete, Edit } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
 import { deleteDevice, fetchDevices, saveDevice } from './services/device.service';
@@ -57,8 +57,9 @@ export const DeviceInfo = () => {
   }, []);
 
   const handleSave = async (values: Record<string, unknown>) => {
+    if (!editing?.id) return;
     const payload: DeviceSavePayload = {
-      id: editing?.id,
+      id: editing.id,
       purchaseMasterId: String(values.purchaseMasterId),
       serialNo: String(values.serialNo ?? '').trim(),
       deviceStatusId: String(values.deviceStatusId),
@@ -66,7 +67,7 @@ export const DeviceInfo = () => {
     try {
       const result = await saveDevice(payload);
       if (!result.success) throw new Error(result.message || 'Failed to save device');
-      message.success(result.message || 'Device saved successfully');
+      message.success(result.message || 'Device updated successfully');
       setDrawerOpen(false);
       setEditing(null);
       await loadDevices();
@@ -138,9 +139,9 @@ export const DeviceInfo = () => {
 
   return <div>
     <Card style={{ marginBottom: 32, background: mode === 'dark' ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' : 'linear-gradient(135deg, #0d3b7a 0%, #1a4d8f 60%, #2563a8 100%)', border: 'none' }}>
-      <div className="flex items-center justify-between"><div><Title level={2} style={{ color: '#fff', margin: 0 }}>Device Information</Title><Text style={{ color: 'rgba(255,255,255,0.75)' }}>Manage registered devices</Text></div><Button onClick={() => { setEditing(null); setDrawerOpen(true); }} icon={<Plus size={18} />} className="bg-white/[0.15] text-white">Add Device</Button></div>
+      <div className="flex items-center justify-between"><div><Title level={2} style={{ color: '#fff', margin: 0 }}>Device Information</Title><Text style={{ color: 'rgba(255,255,255,0.75)' }}>Manage registered devices</Text></div></div>
     </Card>
-    <div className="mb-4 flex flex-wrap gap-3"><Select value={purchaseFilter} onChange={(value) => { setPurchaseFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]} /><Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Statuses', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} /></div>
+    <div className="mb-4 flex flex-wrap gap-3"><Select value={purchaseFilter} onChange={(value) => { setPurchaseFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]} /><Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Status', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} /></div>
     <AppTable<DeviceItem> columns={columns} dataSource={devices} rowKey="id" title="Devices" pagination={false} loading={loading} emptyDescription="No devices found" />
     <AppPagination current={page} pageSize={pageSize} total={total} onChange={(nextPage, nextSize) => { setPage(nextPage); setPageSize(nextSize); }} />
     <Modal
@@ -163,8 +164,8 @@ export const DeviceInfo = () => {
     <AppDrawer
       open={drawerOpen}
       onClose={() => { setDrawerOpen(false); setEditing(null); }}
-      title={editing ? 'Edit Device' : 'Add Device'}
-      confirmText={editing ? 'Update Device' : 'Add Device'}
+      title="Edit Device"
+      confirmText="Update Device"
       onSave={handleSave}
       initialValues={
         editing
