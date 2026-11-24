@@ -38,9 +38,9 @@ export const Navbar = ({ onMenuClick }: { onMenuClick: () => void }) => {
         className="flex items-center justify-between"
         style={{
           background: isDark
-            ? 'linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)'
-            : 'linear-gradient(180deg, #ffffff 0%, #e8edf3 100%)',
-          borderBottom: isDark ? '1px solid #303030' : '1px solid #d0d7e2',
+            ? 'linear-gradient(180deg, #0f2444 0%, #0d1f3d 100%)'
+            : 'linear-gradient(180deg, #e8f0fe 0%, #c8dcf5 100%)',
+          borderBottom: isDark ? '1px solid #2a3f63' : '1px solid #b8cce0',
           height: 64,
           padding: '0 24px',
         }}
@@ -51,10 +51,10 @@ export const Navbar = ({ onMenuClick }: { onMenuClick: () => void }) => {
             aria-label="Toggle navigation menu"
             icon={<MenuIcon size={22} />}
             onClick={onMenuClick}
-            style={{ color: isDark ? '#e8e8e8' : '#172033', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ color: isDark ? '#e8e8e8' : '#0f2444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
           />
           <Typography.Text
-            style={{ color: isDark ? '#e8e8e8' : '#172033' }}
+            style={{ color: isDark ? '#e8e8e8' : '#0f2444' }}
             className="truncate font-bold text-base"
           >
             {title}
@@ -84,7 +84,7 @@ export const Navbar = ({ onMenuClick }: { onMenuClick: () => void }) => {
               <Avatar size={32} style={{ background: '#1677ff' }}>
                 {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
               </Avatar>
-              <ChevronDown size={16} style={{ color: isDark ? '#aaa' : '#888' }} />
+              <ChevronDown size={16} style={{ color: isDark ? '#b8cce0' : '#2a4a7a' }} />
             </div>
           </Dropdown>
         </Space>

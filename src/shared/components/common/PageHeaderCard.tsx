@@ -69,7 +69,7 @@ export const PageToolbarCard: React.FC<PageToolbarCardProps> = ({
               placeholder={searchPlaceholder}
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
-              suffix={<Search size={17} className="text-slate-400" />}
+              suffix={<Search size={17} className="text-slate-500 dark:text-slate-300" />}
               className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-[#171d2b] dark:text-slate-100 text-sm"
             />
           )}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import {
   Tag,
   Button,
@@ -380,10 +380,30 @@ export const PurchaseRecord = () => {
   };
 
   const statCards = [
-    { label: 'Total Purchases', value: counts.total, color: '#374151' },
-    { label: 'Draft', value: counts.draft, color: '#ca8a04' },
-    { label: 'Approved', value: counts.approved, color: '#15803d' },
-    { label: 'Generated', value: counts.generated, color: '#1d4ed8' },
+    {
+      label: 'Total Purchases',
+      description: 'Non-deleted purchases, excluding rejected records.',
+      value: counts.total,
+      color: '#374151',
+    },
+    {
+      label: 'Draft',
+      description: 'Purchases saved and awaiting approval.',
+      value: counts.draft,
+      color: '#ca8a04',
+    },
+    {
+      label: 'Approved',
+      description: 'Approved purchases ready for device generation.',
+      value: counts.approved,
+      color: '#15803d',
+    },
+    {
+      label: 'Generated',
+      description: 'Purchases with device serial numbers generated.',
+      value: counts.generated,
+      color: '#1d4ed8',
+    },
   ];
 
   return (
@@ -414,9 +434,12 @@ export const PurchaseRecord = () => {
             key={card.label}
             className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#171d2b] p-5 shadow-sm"
           >
-            <p className="text-sm text-gray-500 dark:text-slate-400">{card.label}</p>
+            <p className="text-lg font-semibold text-gray-600 dark:text-slate-300">{card.label}</p>
             <p className={`mt-2 text-2xl font-bold ${card.color === '#374151' ? 'text-gray-800 dark:text-slate-100' : card.color === '#ca8a04' ? 'text-amber-600' : card.color === '#15803d' ? 'text-green-600' : 'text-blue-600'}`}>
               {card.value}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-gray-500 dark:text-slate-400">
+              {card.description}
             </p>
           </div>
         ))}
@@ -510,7 +533,7 @@ export const PurchaseRecord = () => {
             width: 140,
             sorter: (a, b) => a.trnDate.localeCompare(b.trnDate),
             render: (text: string) => (
-              <span className="text-slate-600 dark:text-slate-300 font-normal">{formatDisplayDate(text)}</span>
+              <span className="text-black dark:text-slate-100 font-normal">{formatDisplayDate(text)}</span>
             ),
           },
           {
@@ -520,7 +543,7 @@ export const PurchaseRecord = () => {
             width: 130,
             sorter: (a, b) => a.make.localeCompare(b.make),
             render: (text: string) => (
-              <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>
+              <span className="text-black dark:text-slate-100 font-medium">{text}</span>
             ),
           },
           {
@@ -530,7 +553,7 @@ export const PurchaseRecord = () => {
             width: 140,
             sorter: (a, b) => a.deviceModel.localeCompare(b.deviceModel),
             render: (text: string) => (
-              <span className="text-slate-600 dark:text-slate-300">{text}</span>
+              <span className="text-black dark:text-slate-100">{text}</span>
             ),
           },
           {
@@ -540,21 +563,21 @@ export const PurchaseRecord = () => {
             width: 150,
             sorter: (a, b) => a.snPrefix.localeCompare(b.snPrefix),
             render: (text: string, record: Purchase) => (
-              <span className="text-slate-600 dark:text-slate-300">
-                {text}-{String(record.snStart ?? 1).padStart(record.snPadding, '0')}
+              <span className="text-black dark:text-slate-100">
+                {text?.trim() ? text : `${record.prefix} / pad ${record.noPadding} / start ${record.startingNumber}`}
               </span>
             ),
           },
-          {
-            title: 'Total Items',
-            dataIndex: 'totalItem',
-            key: 'totalItem',
-            width: 110,
-            sorter: (a, b) => a.totalItem - b.totalItem,
-            render: (text: number) => (
-              <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>
-            ),
-          },
+          // {
+          //   title: 'Total Items',
+          //   dataIndex: 'totalItem',
+          //   key: 'totalItem',
+          //   width: 110,
+          //   sorter: (a, b) => a.totalItem - b.totalItem,
+          //   render: (text: number) => (
+          //     <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>
+          //   ),
+          // },
           {
             title: 'Status',
             dataIndex: 'status',
@@ -580,7 +603,7 @@ export const PurchaseRecord = () => {
                     setViewingPurchase(record);
                     setFormOpen(true);
                   }}
-                  className="text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                  className="text-gray-700 hover:text-blue-600 dark:text-slate-200 dark:hover:text-blue-400 transition-colors cursor-pointer"
                 >
                   <Eye size={17} />
                 </button>
@@ -739,7 +762,7 @@ export const PurchaseRecord = () => {
                 ['Company', viewingPurchase.companyName],
                 ['Make', viewingPurchase.make],
                 ['Device Model', viewingPurchase.deviceModel],
-                ['Total Items', String(viewingPurchase.totalItem)],
+                // ['Total Items', String(viewingPurchase.totalItem)],
                 [
                   'SN Configuration',
                   `${viewingPurchase.snPrefix} / ${viewingPurchase.snPadding} digits`,

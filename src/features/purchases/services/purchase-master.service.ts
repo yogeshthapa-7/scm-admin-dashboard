@@ -47,6 +47,7 @@ function toItem(raw: any): Purchase {
     deviceModel: raw?.deviceModel ?? raw?.DeviceModel ?? raw?.modelName ?? raw?.ModelName ?? '',
     snPrefix: raw?.snPrefix ?? raw?.SnPrefix ?? '',
     snPadding: Number(raw?.snPadding ?? raw?.SnPadding ?? 0),
+    startingNumber: Number(raw?.startingNumber ?? 0),
     snStart: raw?.snStart ?? raw?.SnStart,
     totalItem: Number(raw?.totalQty ?? raw?.TotalQty ?? raw?.totalItem ?? raw?.TotalItem ?? 0),
     status: (normalizedStatus === undefined || normalizedStatus === null || normalizedStatus === '' ? 2 : Number(normalizedStatus)) as Purchase['status'],
@@ -78,7 +79,7 @@ function addDerivedSerialStarts(items: Purchase[]): Purchase[] {
 
   ordered.forEach((purchase) => {
     const prefix = String(purchase.snPrefix || '').trim();
-    const start = purchase.snStart ?? nextByPrefix.get(prefix) ?? 1;
+    const start = purchase.startingNumber ?? purchase.snStart ?? nextByPrefix.get(prefix) ?? 1;
     starts.set(purchase.id, start);
     nextByPrefix.set(prefix, start + Math.max(0, Number(purchase.totalItem || 0)));
   });

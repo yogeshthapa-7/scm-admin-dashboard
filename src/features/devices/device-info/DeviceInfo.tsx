@@ -3,10 +3,11 @@ import { Button, Form, Input, Modal, Select, Space, message } from 'antd';
 import { RefreshCw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { AppDrawer, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
-import { deleteDevice, fetchDevices, saveDevice } from './services/device.service';
+import { deleteDevice, fetchDevices, createDeviceStatusChange } from './services/device.service';
 import { fetchPurchases } from '@/features/purchases/services/purchase-master.service';
 import { fetchDeviceStatus } from '@/features/devices/device-status/services/device-status.service';
-import type { DeviceItem, DeviceSavePayload } from './types/device.types';
+import type { DeviceItem } from './types/device.types';
+import { getAuthUser } from '@/auth/services/login.service';
 
 
 
@@ -61,21 +62,22 @@ export const DeviceInfo = () => {
 
   const handleSave = async (values: Record<string, unknown>) => {
     if (!editing?.id) return;
-    const payload: DeviceSavePayload = {
-      id: editing.id,
-      purchaseMasterId: String(values.purchaseMasterId),
-      serialNo: String(values.serialNo ?? '').trim(),
-      deviceStatusId: String(values.deviceStatusId),
-    };
+    const user = getAuthUser();
+    const changeBy = user?.username || user?.name || 'system';
     try {
-      const result = await saveDevice(payload);
-      if (!result.success) throw new Error(result.message || 'Failed to save device');
-      message.success(result.message || 'Device updated successfully');
+      const result = await createDeviceStatusChange({
+        deviceInfoId: editing.id,
+        targetDeviceStatusId: String(values.deviceStatusId),
+        narration: String(values.narration ?? '').trim() || 'status change',
+        changeBy,
+      });
+      if (!result.success) throw new Error(result.message || 'Failed to update device status');
+      message.success(result.message || 'Device status updated successfully');
       setDrawerOpen(false);
       setEditing(null);
       await loadDevices();
     } catch (error: any) {
-      message.error(error?.response?.data?.message || error?.message || 'Failed to save device');
+      message.error(error?.response?.data?.message || error?.message || 'Failed to update device status');
       throw error;
     }
   };
@@ -110,15 +112,15 @@ export const DeviceInfo = () => {
       dataIndex: 'serialNo',
       key: 'serialNo',
       width: 180,
-      render: (text: string) => <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>,
+      render: (text: string) => <span className="text-black dark:text-slate-100 font-medium">{text}</span>,
     },
-    {
-      title: 'Model',
-      dataIndex: 'modelName',
-      key: 'modelName',
-      width: 160,
-      render: (value: string) => <span className="text-slate-600 dark:text-slate-300">{value || '—'}</span>,
-    },
+    // {
+    //   title: 'Model',
+    //   dataIndex: 'modelName',
+    //   key: 'modelName',
+    //   width: 160,
+    //   render: (value: string) => <span className="text-black dark:text-slate-100 font-medium">{value || '—'}</span>,
+    // },
     {
       title: 'Status',
       dataIndex: 'deviceStatusId',
@@ -262,9 +264,8 @@ export const DeviceInfo = () => {
         initialValues={
           editing
             ? {
-                purchaseMasterId: String(editing.purchaseMasterId ?? ''),
-                serialNo: editing.serialNo,
                 deviceStatusId: String(editing.deviceStatusId ?? ''),
+                narration: '',
               }
             : undefined
         }
@@ -279,10 +280,7 @@ export const DeviceInfo = () => {
           />
         </Form.Item>
         */}
-        <Form.Item name="serialNo" label="Serial No." rules={[{ required: true, message: 'Please enter serial number' }]}>
-          <Input placeholder="Enter serial number" />
-        </Form.Item>
-        <Form.Item name="deviceStatusId" label="Device Status" rules={[{ required: true, message: 'Please select status' }]}>
+        <Form.Item name="deviceStatusId" label="Target Status" rules={[{ required: true, message: 'Please select target status' }]}>
           <Select
             showSearch
             optionFilterProp="label"
@@ -293,8 +291,11 @@ export const DeviceInfo = () => {
               }
               return opts;
             })()}
-            placeholder="Select status"
+            placeholder="Select target status"
           />
+        </Form.Item>
+        <Form.Item name="narration" label="Narration">
+          <Input.TextArea rows={2} placeholder="Enter narration for this status change" />
         </Form.Item>
       </AppDrawer>
     </div>

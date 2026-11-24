@@ -111,7 +111,7 @@ export const DeviceStatus = () => {
       dataIndex: 'code',
       key: 'code',
       width: 160,
-      render: (text: string) => <span className="text-slate-600 dark:text-slate-300 font-medium">{text}</span>,
+      render: (text: string) => <span className="text-black dark:text-slate-100 font-medium">{text}</span>,
     },
     {
       title: 'Actions',

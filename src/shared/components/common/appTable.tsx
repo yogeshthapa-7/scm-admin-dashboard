@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Table, Typography, Empty } from 'antd';
 import type { TableProps } from 'antd';
 import { AppPagination, type AppPaginationProps } from './AppPagination';
@@ -19,9 +19,6 @@ export interface AppTableProps<RecordType = any> extends Omit<TableProps<RecordT
   loading?: boolean;
   bordered?: boolean;
   serverPagination?: AppPaginationProps;
-  selectable?: boolean;
-  selectedRowKeys?: React.Key[];
-  onSelectionChange?: (selectedKeys: React.Key[], selectedRows: RecordType[]) => void;
 }
 
 export const AppTable = <RecordType = any>({
@@ -38,32 +35,13 @@ export const AppTable = <RecordType = any>({
   loading = false,
   bordered = false,
   serverPagination,
-  selectable = true,
-  selectedRowKeys: controlledKeys,
-  onSelectionChange,
-  rowSelection: customRowSelection,
   ...rest
 }: AppTableProps<RecordType>) => {
-  const [internalSelectedKeys, setInternalSelectedKeys] = useState<React.Key[]>([]);
-  const selectedKeys = controlledKeys !== undefined ? controlledKeys : internalSelectedKeys;
-
   // Preserve column alignments instead of forcing center on everything
   const formattedColumns = columns.map((col) => ({
     ...col,
     align: col.align || 'left',
   }));
-
-  const effectiveRowSelection = customRowSelection !== undefined
-    ? customRowSelection
-    : selectable
-    ? {
-        selectedRowKeys: selectedKeys,
-        onChange: (newKeys: React.Key[], selectedRows: RecordType[]) => {
-          setInternalSelectedKeys(newKeys);
-          onSelectionChange?.(newKeys, selectedRows);
-        },
-      }
-    : undefined;
 
   const hasHeader = title || subtitle || extraHeader;
 
@@ -82,7 +60,7 @@ export const AppTable = <RecordType = any>({
             {subtitle && (
               <div className="mt-0.5">
                 {typeof subtitle === 'string' ? (
-                  <Text className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
+                  <Text className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm">
                     {subtitle}
                   </Text>
                 ) : (
@@ -104,7 +82,16 @@ export const AppTable = <RecordType = any>({
           pagination={pagination}
           loading={loading}
           bordered={bordered}
-          rowSelection={effectiveRowSelection}
+          rowSelection={undefined}
+          components={{
+            body: {
+              cell: ({ children, className: cellClassName, ...props }: any) => (
+                <td {...props} className={`${cellClassName ?? ''} !text-black dark:!text-slate-100`}>
+                  {children}
+                </td>
+              ),
+            },
+          }}
           scroll={{ x: 'max-content', ...rest.scroll }}
           locale={{
             emptyText: <Empty description={emptyDescription} />,

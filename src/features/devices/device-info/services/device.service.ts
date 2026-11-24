@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import api from '@/interceptors/interceptors';
-import type { DeviceItem, DeviceSavePayload, FetchDevicesParams, FetchDevicesResult } from '../types/device.types';
+import type { DeviceItem, DeviceSavePayload, DeviceStatusChangePayload, FetchDevicesParams, FetchDevicesResult } from '../types/device.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 export const API_URL = `${API_BASE_URL}/Device/GetAllDevice`;
 export const GET_BY_ID_URL = `${API_BASE_URL}/Device/GetDeviceById`;
-// export const CREATE_URL = `${API_BASE_URL}/Device/CreateDevice`;
+export const CREATE_URL = `${API_BASE_URL}/Device/CreateDevice`;
 export const UPDATE_URL = `${API_BASE_URL}/Device/UpdateDevice`;
 export const DELETE_URL = `${API_BASE_URL}/Device/DeleteDevice`;
+export const CREATE_STATUS_CHANGE_URL = `${API_BASE_URL}/DeviceStatusChange/CreateDeviceStatusChange`;
 
 function toItem(raw: any): DeviceItem {
   const statusId = raw?.deviceStatusId ?? raw?.DeviceStatusId ?? raw?.statusId ?? raw?.StatusId ?? 0;
@@ -86,4 +87,15 @@ export async function deleteDevice(id: number | string): Promise<{ success: bool
   return { success: true, message: messageOf(res.data, 'Device deleted successfully'), data: res.data };
 }
 
-export const deviceService = { fetchDevices, saveDevice, deleteDevice, getById: (id: number | string) => api.get(`${GET_BY_ID_URL}/${id}`) };
+export async function createDeviceStatusChange(payload: DeviceStatusChangePayload): Promise<{ success: boolean; message?: string; data?: unknown }> {
+  const res = await api.post(CREATE_STATUS_CHANGE_URL, {
+    deviceInfoId: Number(payload.deviceInfoId),
+    targetDeviceStatusId: Number(payload.targetDeviceStatusId),
+    narration: payload.narration || 'status change',
+    changeBy: payload.changeBy,
+  });
+  if (failed(res.data)) return { success: false, message: messageOf(res.data, 'Failed to update device status'), data: res.data };
+  return { success: true, message: messageOf(res.data, 'Device status updated successfully'), data: res.data };
+}
+
+export const deviceService = { fetchDevices, saveDevice, deleteDevice, createDeviceStatusChange, getById: (id: number | string) => api.get(`${GET_BY_ID_URL}/${id}`) };

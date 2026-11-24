@@ -44,8 +44,8 @@ export const DashboardLayout = () => {
       <Layout>
         <Navbar onMenuClick={handleMenuClick} />
         <Content
-          className={`content-area p-6 lg:p-8 xl:p-10 ${isDark ? 'dark' : ''}`}
-          style={{ transition: 'background 0.5s ease' }}
+          className={`content-area p-6 lg:p-8 xl:p-10 ${isDark ? 'dark' : ''} overflow-y-auto`}
+          style={{ transition: 'background 0.5s ease', height: '100dvh', overflowY: 'auto' }}
         >
           <Outlet />
         </Content>

@@ -132,7 +132,11 @@ export const Sidebar = ({ open, onClose, collapsed }: SidebarProps) => {
             : 'linear-gradient(180deg, #0d3b7a 0%, #1a4d8f 50%, #2563a8 100%)',
           borderRight: isDark ? '1px solid #2a2a4a' : '1px solid #d0d7e2',
           transition: 'all 0.28s cubic-bezier(0.2, 0, 0, 1)',
-          overflow: 'hidden',
+          position: 'sticky',
+          top: 0,
+          height: '100dvh',
+          overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
         {sidebarContent(collapsed)}

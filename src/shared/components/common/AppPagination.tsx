@@ -28,12 +28,12 @@ export const AppPagination: React.FC<AppPaginationProps> = ({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-[#171d2b]">
       {showSummary && (
-        <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-normal">
+        <span className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-normal">
           Showing {start} to {end} of {total} items
         </span>
       )}
       <div className="flex items-center gap-3 ml-auto">
-        <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
           <span>Rows per page</span>
           <Select
             size="small"

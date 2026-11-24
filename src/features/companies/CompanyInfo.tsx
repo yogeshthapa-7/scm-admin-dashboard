@@ -138,7 +138,7 @@ export const CompanyInfo = () => {
       key: 'email',
       width: 200,
       sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.email || '').localeCompare(String(b.email || '')),
-      render: (text: string) => <span className="text-slate-600 dark:text-slate-300">{text}</span>,
+      render: (text: string) => <span className="text-black dark:text-slate-100">{text}</span>,
     },
     {
       title: 'Contact',
@@ -146,7 +146,7 @@ export const CompanyInfo = () => {
       key: 'contactNo',
       width: 150,
       sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.contactNo || '').localeCompare(String(b.contactNo || '')),
-      render: (text: string) => <span className="text-slate-600 dark:text-slate-300">{text}</span>,
+      render: (text: string) => <span className="text-black dark:text-slate-100">{text}</span>,
     },
     {
       title: 'Address',
@@ -154,7 +154,7 @@ export const CompanyInfo = () => {
       key: 'address',
       width: 200,
       sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.address || '').localeCompare(String(b.address || '')),
-      render: (text: string) => <span className="text-slate-600 dark:text-slate-300">{text}</span>,
+      render: (text: string) => <span className="text-black dark:text-slate-100">{text}</span>,
     },
     {
       title: 'Make',
@@ -162,7 +162,7 @@ export const CompanyInfo = () => {
       key: 'make',
       width: 130,
       sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.make || '').localeCompare(String(b.make || '')),
-      render: (text: string) => <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>,
+      render: (text: string) => <span className="text-black dark:text-slate-100 font-medium">{text}</span>,
     },
     {
       title: 'Actions',

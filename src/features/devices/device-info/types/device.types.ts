@@ -12,6 +12,13 @@ export interface DeviceItem {
 
 export type DeviceSavePayload = Omit<DeviceItem, 'id'> & { id?: number | string };
 
+export interface DeviceStatusChangePayload {
+  deviceInfoId: number | string;
+  targetDeviceStatusId: number | string;
+  narration: string;
+  changeBy: string;
+}
+
 export interface FetchDevicesParams {
   purchaseMasterId?: number | string;
   deviceStatusId?: number | string;
