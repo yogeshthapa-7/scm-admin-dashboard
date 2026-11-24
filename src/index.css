@@ -484,17 +484,39 @@ h4, .ant-typography h4 {
   font-size: 12px !important;
 }
 
-.company-app-drawer .ant-drawer-title,
-.company-app-drawer .ant-form-item-label > label,
-.company-app-drawer .ant-input,
-.company-app-drawer .ant-input-affix-wrapper,
-.company-app-drawer .ant-btn,
-.company-app-drawer button {
-  font-size: 13px !important;
+.responsive-app-drawer .ant-drawer-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
 }
 
-.company-app-drawer .ant-drawer-title {
-  font-weight: 600;
+.responsive-app-drawer .ant-form-item-label > label,
+.responsive-app-drawer .ant-typography {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.responsive-app-drawer .ant-input,
+.responsive-app-drawer .ant-input-affix-wrapper,
+.responsive-app-drawer .ant-input-number-input,
+.responsive-app-drawer .ant-select-selector,
+.responsive-app-drawer .ant-select-content-value,
+.responsive-app-drawer .ant-select-selection-item,
+.responsive-app-drawer .ndp-input__control input {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.responsive-app-drawer .ant-input::placeholder,
+.responsive-app-drawer .ant-select-selection-placeholder,
+.responsive-app-drawer .ndp-input__control input::placeholder {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.responsive-app-drawer .ant-btn,
+.responsive-app-drawer button {
+  font-size: 14px !important;
+  font-weight: 600 !important;
 }
 
 .dark .purchase-app-drawer .ndp-input__control {

@@ -1,5 +1,6 @@
-import { Drawer, Form, Button } from 'antd';
+import { Drawer, Form, Button, type DrawerProps } from 'antd';
 import { useEffect, useState } from 'react';
+import { useTheme } from '@/context/ThemeContext';
 
 interface AppDrawerProps {
   open: boolean;
@@ -8,6 +9,8 @@ interface AppDrawerProps {
   confirmText?: string;
   width?: number | string;
   rootClassName?: string;
+  hideFormActions?: boolean;
+  hideCancelButton?: boolean;
   children: React.ReactNode;
   onSave: (values: Record<string, unknown>) => void | Promise<void>;
   initialValues?: Record<string, unknown>;
@@ -20,12 +23,15 @@ export const AppDrawer = ({
   confirmText = 'Add',
   width = 700,
   rootClassName,
+  hideFormActions = false,
+  hideCancelButton = false,
   children,
   onSave,
   initialValues,
 }: AppDrawerProps) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const { mode } = useTheme();
 
   useEffect(() => {
     if (open) {
@@ -51,12 +57,24 @@ export const AppDrawer = ({
     }
   };
 
+  const drawerStyles: DrawerProps['styles'] = mode === 'light'
+    ? {
+        section: {
+          background: 'linear-gradient(135deg, #dbeafe 0%, #e2e8f0 52%, #cbd5e1 100%)',
+        },
+        header: { background: 'transparent' },
+        body: { background: 'transparent' },
+        footer: { background: 'transparent' },
+      }
+    : undefined;
+
   return (
     <Drawer
       title={title}
       open={open}
       onClose={onClose}
       width={width}
+      styles={drawerStyles}
       rootClassName={`responsive-app-drawer ${rootClassName ?? ''}`.trim()}
       bodyStyle={{ paddingBottom: 0 }}
       drawerStyle={{ paddingBottom: 24 }}
@@ -96,22 +114,26 @@ export const AppDrawer = ({
       >
         {children}
 
-        <div className="flex justify-end gap-3 pt-6">
-          <Button
-            onClick={onClose}
-            className="h-[38px] rounded-[8px] border-[1.5px] border-[#d1def2] bg-transparent text-[#17376c] font-medium px-5 transition-colors hover:bg-[#f5f7fa]"
-          >
-            Cancel
-          </Button>
-          <Button
-            htmlType="submit"
-            type="primary"
-            loading={loading}
-            className="h-[38px] rounded-[8px] bg-gradient-to-r from-[#168bff] to-[#0862e9] text-white font-medium px-5 shadow-[0_4px_12px_rgba(22,119,255,0.2)] hover:from-[#0879f5] transition-all"
-          >
-            {confirmText}
-          </Button>
-        </div>
+        {!hideFormActions && (
+          <div className="flex justify-end gap-3 pt-6">
+            {!hideCancelButton && (
+              <Button
+                onClick={onClose}
+                className="h-[38px] rounded-[8px] border-[1.5px] border-[#d1def2] bg-transparent text-[#17376c] font-medium px-5 transition-colors hover:bg-[#f5f7fa]"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              htmlType="submit"
+              type="primary"
+              loading={loading}
+              className="h-[38px] rounded-[8px] bg-gradient-to-r from-[#168bff] to-[#0862e9] text-white font-medium px-5 shadow-[0_4px_12px_rgba(22,119,255,0.2)] hover:from-[#0879f5] transition-all"
+            >
+              {confirmText}
+            </Button>
+          </div>
+        )}
       </Form>
     </Drawer>
   );

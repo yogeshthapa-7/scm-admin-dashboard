@@ -6,6 +6,7 @@ import {
   Input,
   Select,
   message,
+  Table,
 } from 'antd';
 import {
   Plus,
@@ -29,6 +30,8 @@ import {
 } from './services/purchase-master.service';
 import { fetchCompanyInfo } from '../companies/services/company-info.service';
 import { fetchDeviceModels } from '../devices/device-modal/services/device-model.service';
+import { fetchDevices } from '../devices/device-info/services/device.service';
+import type { DeviceItem } from '../devices/device-info/types/device.types';
 import {
   formatDisplayDate,
   todayEnglish,
@@ -173,8 +176,70 @@ export const PurchaseRecord = () => {
   const [approveTargetPurchase, setApproveTargetPurchase] = useState<Purchase | null>(null);
   const [showGenerateForm, setShowGenerateForm] = useState(false);
   const [generatingDevices, setGeneratingDevices] = useState(false);
+  const [generatedDeviceResult, setGeneratedDeviceResult] = useState<{
+    purchaseId: number;
+    reloadKey: number;
+    devices: DeviceItem[];
+    error?: string;
+  } | null>(null);
+  const [generatedDevicesReloadKey, setGeneratedDevicesReloadKey] = useState(0);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectFormReason, setRejectFormReason] = useState('');
+
+  const currentGeneratedDeviceResult = formOpen
+    && viewingPurchase !== null
+    && viewingPurchase.status === 3
+    && generatedDeviceResult !== null
+    && generatedDeviceResult.purchaseId === viewingPurchase.id
+    && generatedDeviceResult.reloadKey === generatedDevicesReloadKey
+    ? generatedDeviceResult
+    : null;
+  const generatedDevices = currentGeneratedDeviceResult?.devices ?? [];
+  const generatedDevicesError = currentGeneratedDeviceResult?.error ?? '';
+  const generatedDevicesLoading = formOpen
+    && viewingPurchase !== null
+    && viewingPurchase.status === 3
+    && !currentGeneratedDeviceResult;
+  const generatedPurchaseId = viewingPurchase?.id;
+  const generatedPurchaseStatus = viewingPurchase?.status;
+  const generatedPurchaseTotal = viewingPurchase?.totalItem;
+
+  useEffect(() => {
+    if (!formOpen || generatedPurchaseId == null || generatedPurchaseStatus !== 3) return;
+
+    const controller = new AbortController();
+    const purchaseId = generatedPurchaseId;
+    const reloadKey = generatedDevicesReloadKey;
+
+    fetchDevices({
+      purchaseMasterId: purchaseId,
+      length: Math.max(1, generatedPurchaseTotal ?? 0),
+      signal: controller.signal,
+    })
+      .then((result) => setGeneratedDeviceResult({
+        purchaseId,
+        reloadKey,
+        devices: result.items,
+      }))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setGeneratedDeviceResult({
+            purchaseId,
+            reloadKey,
+            devices: [],
+            error: error instanceof Error ? error.message : 'Unable to load generated devices.',
+          });
+        }
+      });
+
+    return () => controller.abort();
+  }, [
+    formOpen,
+    generatedPurchaseId,
+    generatedPurchaseStatus,
+    generatedPurchaseTotal,
+    generatedDevicesReloadKey,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -570,7 +635,9 @@ export const PurchaseRecord = () => {
             sorter: (a, b) => a.snPrefix.localeCompare(b.snPrefix),
             render: (text: string, record: Purchase) => (
               <span className="text-black dark:text-slate-100">
-                {text?.trim() ? text : `${record.prefix} / pad ${record.noPadding} / start ${record.startingNumber}`}
+                {text?.trim()
+                  ? text
+                  : `${record.snPrefix} / pad ${record.snPadding} / start ${record.startingNumber ?? record.snStart ?? 1}`}
               </span>
             ),
           },
@@ -673,6 +740,8 @@ export const PurchaseRecord = () => {
         title={viewingPurchase ? 'View Purchase' : editingPurchase ? 'Edit Purchase' : 'Create Purchase'}
         rootClassName="purchase-app-drawer"
         confirmText={viewingPurchase ? 'Close' : 'Save Purchase'}
+        hideFormActions={Boolean(viewingPurchase && showGenerateForm)}
+        hideCancelButton={Boolean(viewingPurchase)}
         width={800}
         onSave={viewingPurchase ? () => {} : handleSavePurchase}
         initialValues={{
@@ -741,9 +810,9 @@ export const PurchaseRecord = () => {
                     </Button>
                   </>
                 )}
-                {viewingPurchase.status === 1 && (
+                {viewingPurchase.status === 1 && !showGenerateForm && (
                   <Button
-                    onClick={() => setShowGenerateForm((v) => !v)}
+                    onClick={() => setShowGenerateForm(true)}
                     icon={<RefreshCw size={14} />}
                     style={{
                       height: 32,
@@ -757,36 +826,47 @@ export const PurchaseRecord = () => {
                       boxShadow: '0 4px 8px rgba(82,196,26,0.2)',
                     }}
                   >
-                    Generate Device
+                    Review Generation
                   </Button>
                 )}
               </div>
             </div>
 
-            <div className="grid gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-3">
-              {[
-                ['Reference Number', viewingPurchase.refNo],
-                ['Transaction Date', formatDisplayDate(viewingPurchase.trnDate)],
-                ['Company', viewingPurchase.companyName],
-                ['Make', viewingPurchase.make],
-                ['Device Model', viewingPurchase.deviceModel],
-                // ['Total Items', String(viewingPurchase.totalItem)],
-                [
-                  'SN Configuration',
-                  `${viewingPurchase.snPrefix} / ${viewingPurchase.snPadding} digits`,
-                ],
-                [
-                  'First Serial',
-                  generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, viewingPurchase.snStart ?? 1),
-                ],
-                ['Narration', viewingPurchase.narration || '—'],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <p className="text-xs text-gray-500">{label}</p>
-                  <p className="mt-1 break-words text-sm font-medium text-gray-800">{value}</p>
+            {!showGenerateForm && viewingPurchase.status !== 3 && (
+              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                <h3 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Purchase details</h3>
+                <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    { label: 'Reference Number', value: viewingPurchase.refNo, wide: false },
+                    { label: 'Transaction Date', value: formatDisplayDate(viewingPurchase.trnDate), wide: false },
+                    { label: 'Company', value: viewingPurchase.companyName, wide: false },
+                    { label: 'Make', value: viewingPurchase.make, wide: false },
+                    { label: 'Device Model', value: viewingPurchase.deviceModel, wide: false },
+                    {
+                      label: 'Quantity',
+                      value: `${viewingPurchase.totalItem} device${viewingPurchase.totalItem === 1 ? '' : 's'}`,
+                      wide: false,
+                    },
+                    {
+                      label: 'Serial Configuration',
+                      value: `${viewingPurchase.snPrefix} · ${viewingPurchase.snPadding} digits`,
+                      wide: false,
+                    },
+                    {
+                      label: 'Serial Range',
+                      value: `${generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, viewingPurchase.snStart ?? 1)} – ${generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, (viewingPurchase.snStart ?? 1) + Math.max(viewingPurchase.totalItem, 1) - 1)}`,
+                      wide: false,
+                    },
+                    { label: 'Narration', value: viewingPurchase.narration || '—', wide: true },
+                  ].map(({ label, value, wide }) => (
+                    <div key={label} className={wide ? 'sm:col-span-2 lg:col-span-3' : ''}>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+                      <p className="mt-1 break-words text-sm font-medium text-slate-900 dark:text-slate-100">{value}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </section>
+            )}
 
             {viewingPurchase.status === 4 && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-4">
@@ -859,116 +939,100 @@ export const PurchaseRecord = () => {
               const totalItem = Number(viewingPurchase.totalItem || 0);
               const first = generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, snStart);
               const last = generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, snStart + Math.max(totalItem, 1) - 1);
-              const serials = Array.from({ length: totalItem }, (_, index) =>
+              const preview = Array.from({ length: Math.min(totalItem, 5) }, (_, index) =>
                 generateSerialNumber(viewingPurchase.snPrefix, viewingPurchase.snPadding, snStart + index)
               );
-              const preview = serials.slice(0, 8);
-              const remaining = Math.max(serials.length - preview.length, 0);
               const isSingle = totalItem === 1;
 
               return (
-                <div className="rounded-xl border border-blue-200 bg-white p-4 space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">Generate Devices</h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Review the details below, then confirm to generate devices for this purchase.
-                    </p>
+                <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-blue-50 p-2 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                      <RefreshCw size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100">Review device generation</h3>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                        Confirm the purchase and serial range before creating the devices.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-lg bg-gray-50 p-3">
-                      <p className="text-xs text-gray-500">Device Model</p>
-                      <p className="mt-1 text-sm font-medium text-gray-800">{viewingPurchase.deviceModel || '—'}</p>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Purchase</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{viewingPurchase.refNo}</p>
                     </div>
-                    <div className="rounded-lg bg-gray-50 p-3">
-                      <p className="text-xs text-gray-500">Company / Make</p>
-                      <p className="mt-1 text-sm font-medium text-gray-800">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Device Model</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{viewingPurchase.deviceModel || '—'}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 sm:col-span-2">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Company / Make</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {viewingPurchase.companyName || '—'}{viewingPurchase.make ? ` · ${viewingPurchase.make}` : ''}
                       </p>
                     </div>
-                    <div className="sm:col-span-2 rounded-lg border border-blue-100 bg-blue-50 p-3">
-                      <p className="text-xs text-blue-700">Devices to create</p>
-                      <p className="mt-1 text-base font-semibold text-blue-800">
-                        {totalItem} device{isSingle ? '' : 's'} will be generated
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/50">
+                      <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Devices to create</p>
+                      <p className="mt-1 text-lg font-bold text-blue-900 dark:text-blue-100">
+                        {totalItem} device{isSingle ? '' : 's'}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{isSingle ? 'Serial number' : 'First serial'}</p>
+                      <p className="mt-1 break-all font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">{first}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{isSingle ? 'Serial format' : 'Last serial'}</p>
+                      <p className="mt-1 break-all font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {isSingle ? `${viewingPurchase.snPrefix} · ${viewingPurchase.snPadding} digits` : last}
                       </p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-gray-200 p-4">
-                    <h4 className="mb-3 font-semibold text-gray-800">Serial Number Assignment</h4>
-                    <div className="grid gap-3 sm:grid-cols-3 mb-3">
-                      <div>
-                        <p className="text-xs text-gray-500">Prefix</p>
-                        <p className="mt-1 text-sm font-medium text-gray-800">{viewingPurchase.snPrefix}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Number padding</p>
-                        <p className="mt-1 text-sm font-medium text-gray-800">{viewingPurchase.snPadding} digits</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Starting number</p>
-                        <p className="mt-1 text-sm font-medium text-gray-800">{snStart}</p>
-                      </div>
-                    </div>
-
-                    {isSingle ? (
-                      <div className="rounded-lg bg-gray-50 p-3">
-                        <p className="text-xs text-gray-500">Serial number</p>
-                        <p className="mt-1 font-mono text-base font-semibold text-gray-800">{first}</p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="rounded-lg bg-gray-50 p-3">
-                            <p className="text-xs text-gray-500">First serial</p>
-                            <p className="mt-1 font-mono font-semibold text-gray-800">{first}</p>
-                          </div>
-                          <div className="rounded-lg bg-gray-50 p-3">
-                            <p className="text-xs text-gray-500">Last serial</p>
-                            <p className="mt-1 font-mono font-semibold text-gray-800">{last}</p>
-                          </div>
-                        </div>
-                        {preview.length > 0 && (
-                          <div className="mt-3">
-                            <p className="mb-1 text-xs text-gray-500">Serials in this batch</p>
-                            <p className="text-sm text-gray-700 font-mono break-words">
-                              {preview.join(', ')}{remaining > 0 ? `, … +${remaining} more` : ''}
-                            </p>
-                          </div>
+                  {preview.length > 0 && (
+                    <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                      <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">Serial number preview</p>
+                      <div className="flex flex-wrap gap-2">
+                        {preview.map((serial) => (
+                          <span key={serial} className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                            {serial}
+                          </span>
+                        ))}
+                        {totalItem > preview.length && (
+                          <span className="self-center text-xs text-slate-500 dark:text-slate-400">
+                            +{totalItem - preview.length} more
+                          </span>
                         )}
-                      </>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-                      After confirmation, this purchase will be marked as <strong>Device Generated</strong>.
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="flex justify-end gap-2">
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    Confirming will create these devices and mark this purchase as <strong>Generated</strong>.
+                  </p>
+
+                  <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
                     <Button
                       onClick={() => setShowGenerateForm(false)}
                       disabled={generatingDevices}
-                      style={{ height: 36, borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', color: '#4b5563', fontWeight: 500 }}
+                      className="h-10 rounded-lg border-slate-300 px-4 font-medium dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
                     >
-                      Cancel
+                      Back to purchase
                     </Button>
                     <Button
                       onClick={() => confirmGenerateDevices(viewingPurchase)}
                       loading={generatingDevices}
                       disabled={generatingDevices || totalItem <= 0}
-                      style={{
-                        height: 36,
-                        borderRadius: 8,
-                        border: '1.5px solid #52c41a',
-                        background: generatingDevices || totalItem <= 0 ? '#b7eb8f' : '#52c41a',
-                        color: '#fff',
-                        fontWeight: 600,
-                        boxShadow: generatingDevices || totalItem <= 0 ? 'none' : '0 4px 8px rgba(82,196,26,0.2)',
-                      }}
+                      type="primary"
+                      icon={<CheckCircle2 size={16} />}
+                      className="h-10 rounded-lg bg-green-600 px-4 font-semibold hover:!bg-green-700"
                     >
-                      Confirm &amp; Generate
+                      Generate {totalItem} Device{isSingle ? '' : 's'}
                     </Button>
                   </div>
                 </div>
@@ -977,11 +1041,87 @@ export const PurchaseRecord = () => {
 
             {viewingPurchase.status === 3 && (
               <div className="space-y-4">
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                  <h3 className="font-semibold text-blue-800">Devices Generated</h3>
-                  <p className="mt-1 text-sm text-blue-700">
-                    Devices for this purchase have been generated. View them in the Device page.
-                  </p>
+                <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/40">
+                  <CheckCircle2 className="mt-0.5 shrink-0 text-green-700 dark:text-green-400" size={20} />
+                  <div>
+                    <h3 className="font-semibold text-green-900 dark:text-green-200">Device generation complete</h3>
+                    <p className="mt-1 text-sm text-green-800 dark:text-green-300">
+                      {generatedDevicesLoading
+                        ? `Loading devices for purchase ${viewingPurchase.refNo}…`
+                        : generatedDevicesError
+                          ? `The device list for purchase ${viewingPurchase.refNo} could not be loaded.`
+                          : generatedDevices.length === 0
+                            ? `No device records were returned for purchase ${viewingPurchase.refNo}.`
+                            : `${generatedDevices.length} device${generatedDevices.length === 1 ? '' : 's'} found for purchase ${viewingPurchase.refNo}.`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+                    <div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100">Generated devices</h3>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        {viewingPurchase.deviceModel} · {viewingPurchase.companyName}
+                      </p>
+                    </div>
+                    {(generatedDevicesError || (!generatedDevicesLoading && generatedDevices.length === 0)) && (
+                      <Button
+                        size="small"
+                        icon={<RefreshCw size={14} />}
+                        onClick={() => setGeneratedDevicesReloadKey((key) => key + 1)}
+                      >
+                        Retry
+                      </Button>
+                    )}
+                  </div>
+
+                  {generatedDevicesError ? (
+                    <div className="p-4 text-sm text-red-700 dark:text-red-300" role="alert">
+                      Could not load the generated device list. {generatedDevicesError}
+                    </div>
+                  ) : (
+                    <Table<DeviceItem>
+                      size="small"
+                      rowKey="id"
+                      loading={generatedDevicesLoading}
+                      dataSource={[...generatedDevices].sort((a, b) => a.serialNo.localeCompare(b.serialNo, undefined, { numeric: true, sensitivity: 'base' }))}
+                      pagination={{ pageSize: 8, hideOnSinglePage: true, showSizeChanger: false }}
+                      scroll={{ x: 520, y: 320 }}
+                      locale={{ emptyText: 'No device records were returned for this purchase.' }}
+                      columns={[
+                        {
+                          title: 'Serial Number',
+                          dataIndex: 'serialNo',
+                          key: 'serialNo',
+                          width: 190,
+                          render: (serialNo: string) => (
+                            <span className="font-mono font-medium text-slate-800 dark:text-slate-100">{serialNo || '—'}</span>
+                          ),
+                        },
+                        {
+                          title: 'Model',
+                          dataIndex: 'modelName',
+                          key: 'modelName',
+                          width: 180,
+                          render: (modelName: string | undefined) => (
+                            <span className="text-slate-700 dark:text-slate-200">{modelName || viewingPurchase.deviceModel || '—'}</span>
+                          ),
+                        },
+                        {
+                          title: 'Status',
+                          dataIndex: 'statusName',
+                          key: 'statusName',
+                          width: 120,
+                          render: (statusName: string | undefined) => (
+                            <Tag color={statusName?.toLowerCase() === 'active' ? 'green' : statusName?.toLowerCase() === 'rejected' ? 'red' : 'default'}>
+                              {statusName || 'Unknown'}
+                            </Tag>
+                          ),
+                        },
+                      ]}
+                    />
+                  )}
                 </div>
               </div>
             )}
