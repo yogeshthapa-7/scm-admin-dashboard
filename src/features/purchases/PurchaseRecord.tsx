@@ -506,6 +506,7 @@ export const PurchaseRecord = () => {
       />
 
       <AppTable<Purchase>
+        sectionTitle="Purchase Records"
         className="company-table"
         columns={[
           {

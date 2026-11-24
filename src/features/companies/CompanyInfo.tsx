@@ -276,6 +276,7 @@ export const CompanyInfo = () => {
 
       {/* Company Info table card */}
       <AppTable<CompanyInfoItem>
+        sectionTitle="Company Records"
         className="company-table"
         columns={columns}
         dataSource={paginatedCompanies}

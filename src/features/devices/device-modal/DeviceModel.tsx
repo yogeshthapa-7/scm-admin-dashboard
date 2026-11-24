@@ -95,7 +95,8 @@ export const DeviceModel = () => {
       title: 'Model Name',
       dataIndex: 'name',
       key: 'name',
-      width: 280,
+      width: '50%',
+      align: 'center' as const,
       render: (text: string, record: DeviceModelItem) => (
         <span
           onClick={() => handleEditModel(record)}
@@ -109,9 +110,8 @@ export const DeviceModel = () => {
       title: 'Actions',
       dataIndex: 'actions',
       key: 'actions',
-      width: 160,
+      width: '50%',
       align: 'center' as const,
-      fixed: 'right' as const,
       render: (_: unknown, record: DeviceModelItem) => (
         <Space size="middle">
           <Button
@@ -165,6 +165,7 @@ export const DeviceModel = () => {
 
       {/* Device Model table card */}
       <AppTable<DeviceModelItem>
+        sectionTitle="Device Model Records"
         className="company-table"
         columns={columns}
         dataSource={filteredModels}

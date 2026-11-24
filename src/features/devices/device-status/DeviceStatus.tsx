@@ -175,6 +175,7 @@ export const DeviceStatus = () => {
 
       {/* Device Status table card */}
       <AppTable<DeviceStatusItem>
+        sectionTitle="Device Status Records"
         className="company-table"
         columns={columns}
         dataSource={statuses}

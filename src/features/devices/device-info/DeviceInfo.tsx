@@ -220,6 +220,7 @@ export const DeviceInfo = () => {
 
       {/* Device Info table card */}
       <AppTable<DeviceItem>
+        sectionTitle="Device Records"
         className="company-table"
         columns={columns}
         dataSource={devices}

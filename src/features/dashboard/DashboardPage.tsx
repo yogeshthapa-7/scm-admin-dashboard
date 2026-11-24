@@ -381,6 +381,7 @@ export const DashboardPage = () => {
           >
             <div style={{ flex: 1, minHeight: 420 }}>
               <AppTable
+                sectionTitle="User Records"
                 columns={userColumns}
                 dataSource={dashboardUsers}
                 rowKey="id"
