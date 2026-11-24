@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
-import { Edit, Monitor, Plus, Trash } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
+import { AppDrawer, AppPagination, AppTable, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { deleteDeviceModel, fetchDeviceModels, saveDeviceModel } from './services/device-model.service';
 import type { DeviceModelItem } from './types/device-model.types';
 
@@ -84,52 +84,49 @@ export const DeviceModel = () => {
     }
   };
 
+  const [search, setSearch] = useState('');
+
+  const filteredModels = models.filter((item) =>
+    !search.trim() || item.name.toLowerCase().includes(search.trim().toLowerCase())
+  );
+
   const columns = [
     {
       title: 'Model Name',
       dataIndex: 'name',
       key: 'name',
-      width: 200,
+      width: 280,
+      render: (text: string, record: DeviceModelItem) => (
+        <span
+          onClick={() => handleEditModel(record)}
+          className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+        >
+          {text}
+        </span>
+      ),
     },
     {
       title: 'Actions',
       dataIndex: 'actions',
       key: 'actions',
-      width: 180,
+      width: 160,
+      align: 'center' as const,
       fixed: 'right' as const,
       render: (_: unknown, record: DeviceModelItem) => (
-        <Space size="small">
+        <Space size="middle">
           <Button
+            type="primary"
+            size="small"
             onClick={() => handleEditModel(record)}
-            icon={<Edit size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #1677ff',
-              background: '#1677ff',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(22,119,255,0.2)',
-            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3.5 py-1 rounded-md text-xs shadow-sm"
           >
             Edit
           </Button>
           <Button
+            danger
+            size="small"
             onClick={() => handleDeleteConfirm(record.id)}
-            icon={<Trash size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #f5222d',
-              background: '#f5222d',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-            }}
+            className="font-medium px-3.5 py-1 rounded-md text-xs"
           >
             Delete
           </Button>
@@ -140,50 +137,52 @@ export const DeviceModel = () => {
 
   return (
     <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
-      <div className="company-hero">
-        <div className="company-hero-content">
-          <div className="company-hero-icon" aria-hidden="true">
-            <Monitor size={29} strokeWidth={1.8} />
-          </div>
-          <div>
-            <Title level={2} className="company-hero-title">Device Model</Title>
-            <Text className="company-hero-subtitle">Manage device model types</Text>
-          </div>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingModel(null);
-            setDrawerOpen(true);
-          }}
-          icon={<Plus size={18} />}
-          className="company-add-button"
-        >
-          Add Model
-        </Button>
-      </div>
-
-      <div className="company-table-card">
-        <AppTable<DeviceModelItem>
-          className="company-table"
-          columns={columns}
-          dataSource={models}
-          rowKey="id"
-          emptyDescription="No device models found. Click Add Model to create one."
-          pagination={false}
-          loading={loading}
-        />
-        <div className="company-pagination">
-          <AppPagination
-            current={page}
-            pageSize={pageSize}
-            total={total}
-            onChange={(newPage, newPageSize) => {
-              setPage(newPage);
-              setPageSize(newPageSize);
+      {/* Hero Header Card */}
+      <PageHeaderCard
+        title="Device Model"
+        description="Manage device models and hardware specifications."
+        actions={
+          <Button
+            onClick={() => {
+              setEditingModel(null);
+              setDrawerOpen(true);
             }}
-          />
-        </div>
-      </div>
+            icon={<Plus size={16} className="text-[#092347]" />}
+            className="bg-white hover:bg-slate-100 text-[#092347] font-semibold px-4 py-2 h-10 rounded-lg text-sm border-0 shadow-sm flex items-center gap-2 cursor-pointer"
+          >
+            Add Model
+          </Button>
+        }
+      />
+
+      {/* Toolbar Search Card */}
+      <PageToolbarCard
+        searchPlaceholder="Search model name..."
+        searchValue={search}
+        onSearchChange={(val) => setSearch(val)}
+        showFilterButton={false}
+      />
+
+      {/* Device Model table card */}
+      <AppTable<DeviceModelItem>
+        className="company-table"
+        columns={columns}
+        dataSource={filteredModels}
+        rowKey="id"
+        emptyDescription="No device models found. Click Add Model to create one."
+        pagination={false}
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        serverPagination={{
+          current: page,
+          pageSize: pageSize,
+          total: total,
+          onChange: (newPage, newPageSize) => {
+            setPage(newPage);
+            setPageSize(newPageSize);
+          },
+        }}
+      />
 
       {/* Delete confirmation */}
       <Modal

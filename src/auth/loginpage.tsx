@@ -18,7 +18,7 @@ interface LoginFormValues {
   password: string;
   remember: boolean;
   // company: string;
-}
+} 
 
 /* Registration flow is temporarily disabled.
 interface RegisterFormValues {

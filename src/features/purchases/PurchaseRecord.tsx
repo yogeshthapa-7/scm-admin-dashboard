@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Tag,
   Button,
@@ -6,6 +6,7 @@ import {
   Modal,
   Input,
   Select,
+  Dropdown,
   theme,
   message,
 } from 'antd';
@@ -18,9 +19,12 @@ import {
   Trash2,
   SlidersHorizontal,
   Eye,
+  ShoppingCart,
+  Filter,
+  MoreVertical,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
+import { AppDrawer, AppPagination, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
 import {
@@ -86,12 +90,12 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
   4: 'Rejected',
 };
 
-const STATUS_STYLES: Record<PurchaseStatus, string> = {
-  0: '#ff7875',
-  1: '#73d13d',
-  2: '#ffc53d',
-  3: '#69b1ff',
-  4: '#ff7875',
+const STATUS_STYLES: Record<PurchaseStatus, { background: string; color: string; dot: string }> = {
+  0: { background: '#eef1f4', color: '#667085', dot: '#98a2b3' },
+  1: { background: '#e4f7e9', color: '#18753a', dot: '#16a34a' },
+  2: { background: '#fff0d5', color: '#9a5b00', dot: '#f59e0b' },
+  3: { background: '#e4f7e9', color: '#18753a', dot: '#16a34a' },
+  4: { background: '#ffe5e7', color: '#b42318', dot: '#ef4444' },
 };
 
 function generateSerialNumber(prefix: string, padding: number, number: number) {
@@ -232,6 +236,11 @@ export const PurchaseRecord = () => {
       return matchesSearch && matchesStatus && matchesDate;
     });
   }, [enrichedPurchases, search, statusFilter, fromDate, toDate]);
+
+  const paginatedPurchases = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredPurchases.slice(start, start + pageSize);
+  }, [filteredPurchases, page, pageSize]);
 
   const counts = {
     total: enrichedPurchases.filter((p) => p.status !== 0 && p.status !== 4).length,
@@ -391,61 +400,60 @@ export const PurchaseRecord = () => {
   ];
 
   return (
-      <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
+      <div className={`company-page purchase-page ${isDark ? 'company-page-dark' : ''}`}>
         {/* Header banner */}
-        <div className="company-hero">
-          <div className="company-hero-content">
-            <div className="company-hero-icon" aria-hidden="true">
-              <Plus size={29} strokeWidth={1.8} />
-            </div>
-            <div>
-              <Title level={2} className="company-hero-title">Purchase Master</Title>
-              <Text className="company-hero-subtitle">Manage device purchases and generate device records.</Text>
-            </div>
-          </div>
-          <Button
-            onClick={() => setFormOpen(true)}
-            icon={<Plus size={18} />}
-            className="company-add-button"
-          >
-            Create Purchase
-          </Button>
-        </div>
+        <PageHeaderCard
+          title="Purchase Records"
+          description="View and manage all device purchase transactions."
+          actions={
+            <Button
+              onClick={() => {
+                setEditingPurchase(null);
+                setViewingPurchase(null);
+                setFormOpen(true);
+              }}
+              icon={<Plus size={16} className="text-[#092347]" />}
+              className="bg-white hover:bg-slate-100 text-[#092347] font-semibold px-4 py-2 h-10 rounded-lg text-sm border-0 shadow-sm flex items-center gap-2 cursor-pointer"
+            >
+              Create Purchase
+            </Button>
+          }
+        />
 
       {/* Summary cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+            className="rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#171d2b] p-5 shadow-sm"
           >
-            <p className="text-sm text-gray-500">{card.label}</p>
-            <p className={`mt-2 text-2xl font-bold ${card.color === '#374151' ? 'text-gray-800' : card.color === '#ca8a04' ? 'text-amber-600' : card.color === '#15803d' ? 'text-green-600' : 'text-blue-600'}`}>
+            <p className="text-sm text-gray-500 dark:text-slate-400">{card.label}</p>
+            <p className={`mt-2 text-2xl font-bold ${card.color === '#374151' ? 'text-gray-800 dark:text-slate-100' : card.color === '#ca8a04' ? 'text-amber-600' : card.color === '#15803d' ? 'text-green-600' : 'text-blue-600'}`}>
               {card.value}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Purchase table */}
-        <div className="company-toolbar">
-          <Input
-            allowClear
-            placeholder="Search reference number..."
-            value={searchDraft}
-            onChange={(e) => setSearchDraft(e.target.value)}
-            prefix={<Search size={17} />}
-            style={{ maxWidth: 280 }}
-          />
-          <Button className="company-filter-button" icon={<SlidersHorizontal size={17} />} onClick={() => setFiltersOpen((o) => !o)} aria-expanded={filtersOpen}>Filters</Button>
-        </div>
-
-        {filtersOpen && (
-          <div className="company-toolbar" style={{ marginBottom: 12, flexWrap: 'wrap', alignItems: 'end' }}>
+      {/* Toolbar Search & Filter Card */}
+      <PageToolbarCard
+        searchPlaceholder="Search reference number, model, or SN..."
+        searchValue={searchDraft}
+        onSearchChange={(val) => {
+          setSearchDraft(val);
+          setSearch(val);
+          setPage(1);
+        }}
+        showFilterButton={true}
+        filtersOpen={filtersOpen}
+        onToggleFilters={() => setFiltersOpen(!filtersOpen)}
+        filterContent={
+          <div className="flex flex-wrap items-end gap-3">
             <Select
               value={statusDraft}
               onChange={(value) => setStatusDraft(value)}
               style={{ width: 160 }}
+              className="h-9"
               options={[
                 { value: 'all', label: 'All Status' },
                 { value: '2', label: 'Draft' },
@@ -465,178 +473,174 @@ export const PurchaseRecord = () => {
               </label>
             </div>
             <Button
-              className="company-filter-apply-button"
+              type="primary"
               onClick={() => {
                 setSearch(searchDraft); setStatusFilter(statusDraft); setFromDate(fromDateDraft); setToDate(toDateDraft); setPage(1);
               }}
-              style={{ height: 38, borderRadius: 8, border: '1.5px solid #1677ff', background: '#1677ff', color: '#fff', fontWeight: 600 }}
-            >Filter</Button>
+              className="bg-blue-600 hover:bg-blue-700 h-9 font-medium"
+            >
+              Filter
+            </Button>
             <Button
-              className="company-clear-button"
               onClick={() => {
                 setSearchDraft(''); setStatusDraft('all'); setFromDateDraft(''); setToDateDraft('');
                 setSearch(''); setStatusFilter('all'); setFromDate(''); setToDate(''); setPage(1);
               }}
-              icon={<RefreshCw size={16} />}
-              style={{ height: 38, borderRadius: 8 }}
-            >Clear</Button>
+              icon={<RefreshCw size={15} />}
+              className="h-9"
+            >
+              Clear
+            </Button>
           </div>
-        )}
+        }
+      />
 
-        <div className="company-table-card">
-          <AppTable<Purchase>
-            className="company-table"
-            columns={[
-            {
-              title: 'Reference No.',
-              dataIndex: 'refNo',
-              key: 'refNo',
-              width: 140,
-              render: (text: string) => (
-                <Text style={{ fontWeight: 600, color: '#1677ff' }}>{text}</Text>
-              ),
-            },
-            {
-              title: 'Transaction Date',
-              dataIndex: 'trnDate',
-              key: 'trnDate',
-              width: 120,
-              render: (text: string) => (
-                <Text style={{ color: token.colorTextSecondary }}>{formatDisplayDate(text)}</Text>
-              ),
-            },
-            {
-              title: 'Make',
-              dataIndex: 'make',
-              key: 'make',
-              width: 140,
-              render: (text: string) => (
-                <Text style={{ fontWeight: 600, color: token.colorText, fontSize: 14 }}>{text}</Text>
-              ),
-            },
-            {
-              title: 'Device Model',
-              dataIndex: 'deviceModel',
-              key: 'deviceModel',
-              width: 160,
-              render: (text: string) => (
-                <Text style={{ color: token.colorTextSecondary }}>{text}</Text>
-              ),
-            },
-            {
-              title: 'SN Configuration',
-              dataIndex: 'snPrefix',
-              key: 'snPrefix',
-              width: 140,
-              render: (text: string, record: Purchase) => (
-                <Text
-                  style={{ fontWeight: 600, color: token.colorText }}
-                  title={`${record.snPadding} digits`}
-                >
-                  {text}-{String(record.snStart ?? 1).padStart(record.snPadding, '0')}
-                </Text>
-              ),
-            },
-            {
-              title: 'Total Items',
-              dataIndex: 'totalItem',
-              key: 'totalItem',
-              width: 100,
-              render: (text: number) => (
-                <Text style={{ fontWeight: 600, color: token.colorText }}>{text}</Text>
-              ),
-            },
-            {
-              title: 'Status',
-              dataIndex: 'status',
-              key: 'status',
-              width: 120,
-              render: (status: PurchaseStatus) => (
-                <div
-                  style={{
-                    backgroundColor: STATUS_STYLES[status] || '#e5e7eb',
-                    padding: '4px 8px',
-                    borderRadius: 4,
-                    color: '#000',
-                    fontWeight: 600,
-                    display: 'inline-block',
-                    minWidth: '120px',
+      <AppTable<Purchase>
+        className="company-table"
+        columns={[
+          {
+            title: 'Reference No.',
+            dataIndex: 'refNo',
+            key: 'refNo',
+            width: 140,
+            sorter: (a, b) => a.refNo.localeCompare(b.refNo),
+            render: (text: string, record: Purchase) => (
+              <span
+                onClick={() => {
+                  setViewingPurchase(record);
+                  setFormOpen(true);
+                }}
+                className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+              >
+                {text}
+              </span>
+            ),
+          },
+          {
+            title: 'Transaction Date',
+            dataIndex: 'trnDate',
+            key: 'trnDate',
+            width: 140,
+            sorter: (a, b) => a.trnDate.localeCompare(b.trnDate),
+            render: (text: string) => (
+              <span className="text-slate-600 dark:text-slate-300 font-normal">{formatDisplayDate(text)}</span>
+            ),
+          },
+          {
+            title: 'Make',
+            dataIndex: 'make',
+            key: 'make',
+            width: 130,
+            sorter: (a, b) => a.make.localeCompare(b.make),
+            render: (text: string) => (
+              <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>
+            ),
+          },
+          {
+            title: 'Device Model',
+            dataIndex: 'deviceModel',
+            key: 'deviceModel',
+            width: 140,
+            sorter: (a, b) => a.deviceModel.localeCompare(b.deviceModel),
+            render: (text: string) => (
+              <span className="text-slate-600 dark:text-slate-300">{text}</span>
+            ),
+          },
+          {
+            title: 'SN Configuration',
+            dataIndex: 'snPrefix',
+            key: 'snPrefix',
+            width: 150,
+            sorter: (a, b) => a.snPrefix.localeCompare(b.snPrefix),
+            render: (text: string, record: Purchase) => (
+              <span className="text-slate-600 dark:text-slate-300">
+                {text}-{String(record.snStart ?? 1).padStart(record.snPadding, '0')}
+              </span>
+            ),
+          },
+          {
+            title: 'Total Items',
+            dataIndex: 'totalItem',
+            key: 'totalItem',
+            width: 110,
+            sorter: (a, b) => a.totalItem - b.totalItem,
+            render: (text: number) => (
+              <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>
+            ),
+          },
+          {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            width: 130,
+            sorter: (a, b) => a.status - b.status,
+            render: (status: PurchaseStatus) => (
+              <StatusBadge status={STATUS_LABELS[status] || status} />
+            ),
+          },
+          {
+            title: 'Actions',
+            dataIndex: 'actions',
+            key: 'actions',
+            width: 120,
+            align: 'center' as const,
+            render: (_: any, record: Purchase) => (
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  title="View purchase"
+                  onClick={() => {
+                    setViewingPurchase(record);
+                    setFormOpen(true);
                   }}
+                  className="text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
                 >
-                  {STATUS_LABELS[status] ?? String(status)}
-                </div>
-              ),
-            },
-            {
-              title: 'Actions',
-              dataIndex: 'actions',
-              key: 'actions',
-              width: 150,
-              fixed: 'right' as const,
-              render: (_: any, record: Purchase) => (
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="text"
-                    title="View purchase"
-                    aria-label="View purchase"
+                  <Eye size={17} />
+                </button>
+
+                {record.status === 2 && (
+                  <button
+                    type="button"
+                    title="Edit purchase"
+                    onClick={() => handleEditPurchase(record)}
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 transition-colors cursor-pointer"
+                  >
+                    <Edit size={17} />
+                  </button>
+                )}
+
+                {[1, 2, 3, 4].includes(record.status) && (
+                  <button
+                    type="button"
+                    title="Delete purchase"
                     onClick={() => {
-                      setViewingPurchase(record);
-                      setFormOpen(true);
+                      setDeleteTargetPurchase(record);
+                      setDeleteConfirmOpen(true);
                     }}
-                    icon={<Eye size={17} />}
-                    style={{ color: '#4b5563' }}
-                  />
-
-                  {record.status === 2 && (
-                    <Button
-                      type="text"
-                      title="Edit purchase"
-                      aria-label="Edit purchase"
-                      onClick={() => handleEditPurchase(record)}
-                      icon={<Edit size={17} />}
-                      style={{ color: '#1677ff' }}
-                    />
-                  )}
-
-                  {[1, 2, 3, 4].includes(record.status) && (
-                    <Button
-                      type="text"
-                      title="Delete purchase"
-                      aria-label="Delete purchase"
-                      onClick={() => {
-                        setDeleteTargetPurchase(record);
-                        setDeleteConfirmOpen(true);
-                      }}
-                      icon={<Trash2 size={17} />}
-                      style={{ color: '#f5222d' }}
-                    />
-                  )}
-                </div>
-              ),
-            },
-          ]}
-          dataSource={filteredPurchases}
-          rowKey="id"
-          pagination={false}
-          loading={loading}
-          scroll={{ x: 'max-content' }}
-          />
-          <div className="company-pagination">
-            <AppPagination
-              current={page}
-              pageSize={pageSize}
-              total={total}
-              onChange={(newPage, newPageSize) => {
-                setPage(newPage);
-                setPageSize(newPageSize);
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="mt-2 text-xs text-gray-500">
-          Showing {filteredPurchases.length} of {counts.total} purchases
-        </div>
+                    className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                )}
+              </div>
+            ),
+          },
+        ]}
+        dataSource={paginatedPurchases}
+        rowKey="id"
+        pagination={false}
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        serverPagination={{
+          current: page,
+          pageSize: pageSize,
+          total: filteredPurchases.length,
+          onChange: (newPage, newPageSize) => {
+            setPage(newPage);
+            setPageSize(newPageSize);
+          },
+        }}
+      />
 
       {/* Purchase form drawer */}
       <AppDrawer
@@ -670,7 +674,7 @@ export const PurchaseRecord = () => {
         {viewingPurchase ? (
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Tag className={STATUS_STYLES[viewingPurchase.status]} style={{ fontWeight: 600 }}>
+              <Tag style={{ fontWeight: 600, color: STATUS_STYLES[viewingPurchase.status]?.color, background: STATUS_STYLES[viewingPurchase.status]?.background, border: 0 }}>
                 {STATUS_LABELS[viewingPurchase.status]}
               </Tag>
               <div className="flex gap-2">

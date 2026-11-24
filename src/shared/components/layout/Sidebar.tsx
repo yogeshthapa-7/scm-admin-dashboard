@@ -69,6 +69,7 @@ export const Sidebar = ({ open, onClose, collapsed }: SidebarProps) => {
       <div className="sidebar-content">
         <div style={{ paddingTop: 0, paddingBottom: 8, textAlign: 'center' }}>
           <img src={logo} alt="SCM" className={isCollapsed ? 'sidebar-logo sidebar-logo-collapsed' : 'sidebar-logo'} />
+          {!isCollapsed && <div className="sidebar-slogan">Biometric Access Control</div>}
         </div>
         <div
           style={{
@@ -91,8 +92,8 @@ export const Sidebar = ({ open, onClose, collapsed }: SidebarProps) => {
                 darkItemSelectedColor: '#ffffff',
                 itemBorderRadius: 8,
                 itemMarginInline: 12,
-                itemHeight: 50,
-                fontSize: 16,
+                itemHeight: 44,
+                fontSize: 14,
                 itemSelectedBg: 'rgba(255, 255, 255, 0.25)',
                 itemSelectedColor: '#ffffff',
               },

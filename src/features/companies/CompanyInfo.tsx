@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
-import { Building2, Trash, Edit, Plus, Search, SlidersHorizontal, RefreshCcw } from 'lucide-react';
+import { Trash, Edit, Plus, RefreshCcw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
+import { AppDrawer, AppPagination, AppTable, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { deleteCompanyInfo, fetchCompanyInfo, saveCompanyInfo } from './services/company-info.service';
 import type { CompanyInfoItem } from './types/company-info.types';
 
@@ -121,71 +121,71 @@ export const CompanyInfo = () => {
       title: 'Company Name',
       dataIndex: 'fullName',
       key: 'fullName',
-      width: 180,
+      width: 200,
+      sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.fullName || '').localeCompare(String(b.fullName || '')),
+      render: (text: string, record: CompanyInfoItem) => (
+        <span
+          onClick={() => handleEditCompany(record)}
+          className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+        >
+          {text}
+        </span>
+      ),
     },
     {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
       width: 200,
+      sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.email || '').localeCompare(String(b.email || '')),
+      render: (text: string) => <span className="text-slate-600 dark:text-slate-300">{text}</span>,
     },
     {
       title: 'Contact',
       dataIndex: 'contactNo',
       key: 'contactNo',
       width: 150,
+      sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.contactNo || '').localeCompare(String(b.contactNo || '')),
+      render: (text: string) => <span className="text-slate-600 dark:text-slate-300">{text}</span>,
     },
     {
       title: 'Address',
       dataIndex: 'address',
       key: 'address',
-      width: 180,
+      width: 200,
+      sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.address || '').localeCompare(String(b.address || '')),
+      render: (text: string) => <span className="text-slate-600 dark:text-slate-300">{text}</span>,
     },
     {
       title: 'Make',
       dataIndex: 'make',
       key: 'make',
-      width: 120,
+      width: 130,
+      sorter: (a: CompanyInfoItem, b: CompanyInfoItem) => String(a.make || '').localeCompare(String(b.make || '')),
+      render: (text: string) => <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>,
     },
     {
       title: 'Actions',
       dataIndex: 'actions',
       key: 'actions',
-      width: 180,
+      width: 160,
+      align: 'center' as const,
       fixed: 'right' as const,
       render: (_: unknown, record: CompanyInfoItem) => (
-        <Space size="small">
+        <Space size="middle">
           <Button
+            type="primary"
+            size="small"
             onClick={() => handleEditCompany(record)}
-            icon={<Edit size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #1677ff',
-              background: '#1677ff',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(22,119,255,0.2)',
-            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3.5 py-1 rounded-md text-xs shadow-sm"
           >
             Edit
           </Button>
           <Button
+            danger
+            size="small"
             onClick={() => handleDeleteConfirm(record.id)}
-            icon={<Trash size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #f5222d',
-              background: '#f5222d',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-            }}
+            className="font-medium px-3.5 py-1 rounded-md text-xs"
           >
             Delete
           </Button>
@@ -196,136 +196,104 @@ export const CompanyInfo = () => {
 
   return (
     <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
-      <div className="company-hero">
-        <div className="company-hero-content">
-          <div className="company-hero-icon" aria-hidden="true">
-            <Building2 size={29} strokeWidth={1.8} />
-          </div>
-          <div>
-            <Title level={2} className="company-hero-title">
-              Company Information
-            </Title>
-            <Text className="company-hero-subtitle">Manage company details and configuration</Text>
-          </div>
-        </div>
-        {companies.length === 0 && (
+      {/* Hero Header Card */}
+      <PageHeaderCard
+        title="Company Information"
+        description="Manage company details, contacts, and configuration."
+        actions={
           <Button
             onClick={() => {
               setEditingCompany(null);
               setDrawerOpen(true);
             }}
-            icon={<Plus size={18} />}
-            className="company-add-button"
+            icon={<Plus size={16} className="text-[#092347]" />}
+            className="bg-white hover:bg-slate-100 text-[#092347] font-semibold px-4 py-2 h-10 rounded-lg text-sm border-0 shadow-sm flex items-center gap-2 cursor-pointer"
           >
             Add Company
           </Button>
-        )}
-      </div>
+        }
+      />
 
-      <div className="company-toolbar">
-        <Input
-          allowClear
-          className="company-search-input"
-          prefix={<Search size={17} />}
-          value={search}
-          placeholder="Search company name..."
-          aria-label="Search company name"
-          style={{ maxWidth: 280 }}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(1);
-          }}
-        />
-        <Button
-          className="company-filter-button"
-          icon={<SlidersHorizontal size={17} />}
-          aria-expanded={filtersOpen}
-          onClick={() => setFiltersOpen((open) => !open)}
-        >
-          Filters
-        </Button>
-      </div>
+      {/* Toolbar Search & Filter Card */}
+      <PageToolbarCard
+        searchPlaceholder="Search company name..."
+        searchValue={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setPage(1);
+        }}
+        showFilterButton={true}
+        filtersOpen={filtersOpen}
+        onToggleFilters={() => setFiltersOpen(!filtersOpen)}
+        filterContent={
+          <div className="flex flex-wrap items-end gap-3">
+            <Input
+              allowClear
+              placeholder="Filter by email"
+              value={emailDraft}
+              onChange={(e) => setEmailDraft(e.target.value)}
+              style={{ width: 200 }}
+              className="h-9"
+            />
+            <Input
+              allowClear
+              placeholder="Filter by contact"
+              value={contactDraft}
+              onChange={(e) => setContactDraft(e.target.value)}
+              style={{ width: 200 }}
+              className="h-9"
+            />
+            <Input
+              allowClear
+              placeholder="Filter by address"
+              value={addressDraft}
+              onChange={(e) => setAddressDraft(e.target.value)}
+              style={{ width: 200 }}
+              className="h-9"
+            />
+            <Button
+              type="primary"
+              onClick={() => setPage(1)}
+              className="bg-blue-600 hover:bg-blue-700 h-9 font-medium"
+            >
+              Apply Filter
+            </Button>
+            <Button
+              onClick={() => {
+                setEmailDraft('');
+                setContactDraft('');
+                setAddressDraft('');
+                setPage(1);
+              }}
+              icon={<RefreshCcw size={15} />}
+              className="h-9"
+            >
+              Reset
+            </Button>
+          </div>
+        }
+      />
 
-      {filtersOpen && (
-        <div className="company-toolbar" style={{ marginBottom: 12, flexWrap: 'wrap', alignItems: 'end' }}>
-          <Input
-            allowClear
-            placeholder="Filter by email"
-            value={emailDraft}
-            onChange={(e) => setEmailDraft(e.target.value)}
-            style={{ width: 200 }}
-          />
-          <Input
-            allowClear
-            placeholder="Filter by contact"
-            value={contactDraft}
-            onChange={(e) => setContactDraft(e.target.value)}
-            style={{ width: 200 }}
-          />
-          <Input
-            allowClear
-            placeholder="Filter by address"
-            value={addressDraft}
-            onChange={(e) => setAddressDraft(e.target.value)}
-            style={{ width: 200 }}
-          />
-          {/* <div style={{ flex: 1 }}>
-            <Text strong>Active filters: </Text>
-            <Text type="secondary">
-              {search.trim() ? `Name contains “${search.trim()}”` : 'No text filter'}
-              {emailDraft.trim() ? ` · Email contains “${emailDraft.trim()}”` : ''}
-              {contactDraft.trim() ? ` · Contact contains “${contactDraft.trim()}”` : ''}
-              {addressDraft.trim() ? ` · Address contains “${addressDraft.trim()}”` : ''}
-            </Text>
-          </div> */}
-          <Button
-            className="company-filter-apply-button"
-            onClick={() => {
-              setPage(1);
-            }}
-            style={{ height: 38, borderRadius: 8, border: '1.5px solid #1677ff', background: '#1677ff', color: '#fff', fontWeight: 600 }}
-          >
-            Filter
-          </Button>
-          <Button
-            className="company-clear-button"
-            onClick={() => {
-              setEmailDraft('');
-              setContactDraft('');
-              setAddressDraft('');
-              setPage(1);
-            }}
-            icon={<RefreshCcw size={16} />}
-            style={{ height: 38, borderRadius: 8 }}
-          >
-            Clear
-          </Button>
-        </div>
-      )}
-
-      {/* Company Info table */}
-      <div className="company-table-card">
-        <AppTable<CompanyInfoItem>
-          className="company-table"
-          columns={columns}
-          dataSource={paginatedCompanies}
-          rowKey="id"
-          emptyDescription="No company profiles found. Click Add Company to create one."
-          pagination={false}
-          loading={loading}
-        />
-        <div className="company-pagination">
-          <AppPagination
-            current={page}
-            pageSize={pageSize}
-            total={visibleCompanies.length}
-            onChange={(newPage, newPageSize) => {
-              setPage(newPage);
-              setPageSize(newPageSize);
-            }}
-          />
-        </div>
-      </div>
+      {/* Company Info table card */}
+      <AppTable<CompanyInfoItem>
+        className="company-table"
+        columns={columns}
+        dataSource={paginatedCompanies}
+        rowKey="id"
+        emptyDescription="No company profiles found. Click Add Company to create one."
+        pagination={false}
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        serverPagination={{
+          current: page,
+          pageSize: pageSize,
+          total: visibleCompanies.length,
+          onChange: (newPage, newPageSize) => {
+            setPage(newPage);
+            setPageSize(newPageSize);
+          },
+        }}
+      />
 
       {/* Delete confirmation */}
       <Modal

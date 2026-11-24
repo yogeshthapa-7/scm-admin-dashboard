@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
-import { Cpu, Delete, Edit, Search } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
+import { AppDrawer, AppPagination, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { deleteDevice, fetchDevices, saveDevice } from './services/device.service';
 import { fetchPurchases } from '@/features/purchases/services/purchase-master.service';
 import { fetchDeviceStatus } from '@/features/devices/device-status/services/device-status.service';
@@ -92,46 +92,64 @@ export const DeviceInfo = () => {
     await loadDevices();
   };
 
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const columns = [
-    { title: 'Purchase Reference No.', dataIndex: 'purchaseMasterId', key: 'purchaseMasterId', width: 180, render: (id: number | string) => purchases.find((item) => String(item.id) === String(id))?.refNo || String(id) },
-    { title: 'Serial No.', dataIndex: 'serialNo', key: 'serialNo', width: 180 },
-    { title: 'Model', dataIndex: 'modelName', key: 'modelName', width: 180, render: (value: string) => value || '—' },
-    { title: 'Status', dataIndex: 'deviceStatusId', key: 'deviceStatusId', width: 160, render: (id: number | string, record: DeviceItem) => record.statusName || statuses.find((item) => String(item.id) === String(id))?.statusName || String(id) },
     {
-      title: 'Actions', key: 'actions', width: 180, fixed: 'right' as const,
+      title: 'Purchase Reference No.',
+      dataIndex: 'purchaseMasterId',
+      key: 'purchaseMasterId',
+      width: 190,
+      render: (id: number | string) => {
+        const refNo = purchases.find((item) => String(item.id) === String(id))?.refNo || String(id);
+        return <span className="font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer">{refNo}</span>;
+      },
+    },
+    {
+      title: 'Serial No.',
+      dataIndex: 'serialNo',
+      key: 'serialNo',
+      width: 180,
+      render: (text: string) => <span className="text-slate-700 dark:text-slate-200 font-medium">{text}</span>,
+    },
+    {
+      title: 'Model',
+      dataIndex: 'modelName',
+      key: 'modelName',
+      width: 160,
+      render: (value: string) => <span className="text-slate-600 dark:text-slate-300">{value || '—'}</span>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'deviceStatusId',
+      key: 'deviceStatusId',
+      width: 140,
+      render: (id: number | string, record: DeviceItem) => {
+        const statusText = record.statusName || statuses.find((item) => String(item.id) === String(id))?.statusName || String(id);
+        return <StatusBadge status={statusText} />;
+      },
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 160,
+      align: 'center' as const,
+      fixed: 'right' as const,
       render: (_: unknown, record: DeviceItem) => (
-        <Space size="small">
+        <Space size="middle">
           <Button
+            type="primary"
+            size="small"
             onClick={() => { setEditing(record); setDrawerOpen(true); }}
-            icon={<Edit size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #1677ff',
-              background: '#1677ff',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(22,119,255,0.2)',
-            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3.5 py-1 rounded-md text-xs shadow-sm"
           >
             Edit
           </Button>
           <Button
+            danger
+            size="small"
             onClick={() => setDeleteTarget(record)}
-            icon={<Delete size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #f5222d',
-              background: '#f5222d',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-            }}
+            className="font-medium px-3.5 py-1 rounded-md text-xs"
           >
             Delete
           </Button>
@@ -142,37 +160,82 @@ export const DeviceInfo = () => {
 
   return (
     <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
-      <div className="company-hero">
-        <div className="company-hero-content">
-          <div className="company-hero-icon" aria-hidden="true">
-            <Cpu size={29} strokeWidth={1.8} />
-          </div>
-          <div>
-            <Title level={2} className="company-hero-title">Device Information</Title>
-            <Text className="company-hero-subtitle">Manage registered devices</Text>
-          </div>
-        </div>
-      </div>
+      {/* Hero Header Card */}
+      <PageHeaderCard
+        title="Device Information"
+        description="Manage registered devices and operational statuses."
+        actions={
+          <Button
+            onClick={() => loadDevices()}
+            icon={<RefreshCw size={15} className="text-[#092347]" />}
+            className="bg-white hover:bg-slate-100 text-[#092347] font-semibold px-4 py-2 h-10 rounded-lg text-sm border-0 shadow-sm flex items-center gap-2 cursor-pointer"
+          >
+            Refresh
+          </Button>
+        }
+      />
 
-      <div className="company-toolbar">
-        <Input
-          placeholder="Search serial no..."
-          value={serialSearch}
-          onChange={(e) => { setSerialSearch(e.target.value); setPage(1); }}
-          prefix={<Search size={17} />}
-          style={{ maxWidth: 280 }}
-          allowClear
-        />
-        <Select value={purchaseFilter} onChange={(value) => { setPurchaseFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]} />
-        <Select value={statusFilter} onChange={(value) => { setStatusFilter(value); setPage(1); }} className="w-full sm:w-56" options={[{ label: 'All Status', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]} />
-      </div>
+      {/* Toolbar Search & Filter Card */}
+      <PageToolbarCard
+        searchPlaceholder="Search serial no..."
+        searchValue={serialSearch}
+        onSearchChange={(val) => {
+          setSerialSearch(val);
+          setPage(1);
+        }}
+        showFilterButton={true}
+        filtersOpen={filtersOpen}
+        onToggleFilters={() => setFiltersOpen(!filtersOpen)}
+        filterContent={
+          <div className="flex flex-wrap items-end gap-3">
+            <Select
+              value={purchaseFilter}
+              onChange={(value) => { setPurchaseFilter(value); setPage(1); }}
+              className="w-full sm:w-56 h-9"
+              options={[{ label: 'All Purchases', value: 'all' }, ...purchases.map((item) => ({ label: item.refNo, value: String(item.id) }))]}
+            />
+            <Select
+              value={statusFilter}
+              onChange={(value) => { setStatusFilter(value); setPage(1); }}
+              className="w-full sm:w-56 h-9"
+              options={[{ label: 'All Status', value: 'all' }, ...statuses.map((item) => ({ label: item.statusName, value: String(item.id) }))]}
+            />
+            <Button
+              onClick={() => {
+                setPurchaseFilter('all');
+                setStatusFilter('all');
+                setSerialSearch('');
+                setPage(1);
+              }}
+              icon={<RefreshCw size={15} />}
+              className="h-9"
+            >
+              Reset Filters
+            </Button>
+          </div>
+        }
+      />
 
-      <div className="company-table-card">
-        <AppTable<DeviceItem> className="company-table" columns={columns} dataSource={devices} rowKey="id" pagination={false} loading={loading} emptyDescription="No devices found" />
-        <div className="company-pagination">
-          <AppPagination current={page} pageSize={pageSize} total={total} onChange={(nextPage, nextSize) => { setPage(nextPage); setPageSize(nextSize); }} />
-        </div>
-      </div>
+      {/* Device Info table card */}
+      <AppTable<DeviceItem>
+        className="company-table"
+        columns={columns}
+        dataSource={devices}
+        rowKey="id"
+        pagination={false}
+        loading={loading}
+        emptyDescription="No devices found"
+        scroll={{ x: 'max-content' }}
+        serverPagination={{
+          current: page,
+          pageSize: pageSize,
+          total: total,
+          onChange: (nextPage, nextSize) => {
+            setPage(nextPage);
+            setPageSize(nextSize);
+          },
+        }}
+      />
       <Modal
         open={Boolean(deleteTarget)}
         title="Delete Device"

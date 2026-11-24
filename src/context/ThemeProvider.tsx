@@ -8,6 +8,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     document.body.classList.toggle('dark-mode', mode === 'dark');
+    document.documentElement.classList.toggle('dark', mode === 'dark');
+    document.body.classList.toggle('dark', mode === 'dark');
   }, [mode]);
 
   const toggle = useCallback(() => {
@@ -43,6 +45,18 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             Card: {
               colorBgContainer: '#1e1e1e',
             },
+            Table: {
+              colorBgContainer: '#171d2b',
+              headerBg: '#1e293b',
+              headerColor: '#cbd5e1',
+              rowHoverBg: '#202a3d',
+              borderColor: '#2b3850',
+              colorText: '#e2e8f0',
+            },
+            Pagination: {
+              colorText: '#e2e8f0',
+              colorBgContainer: '#171d2b',
+            },
             Menu: {
               darkItemBg: 'transparent',
               darkSubMenuItemBg: 'transparent',
@@ -59,6 +73,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
             },
           }
         : {
+            Table: {
+              colorBgContainer: '#ffffff',
+              headerBg: '#f8fafc',
+              headerColor: '#475569',
+              rowHoverBg: '#f8fafc',
+              borderColor: '#e2e8f0',
+              colorText: '#334155',
+            },
             Menu: {
               itemBorderRadius: 8,
               itemMarginInline: 12,

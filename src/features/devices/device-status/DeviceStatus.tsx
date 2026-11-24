@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Input, Modal, Space, Typography, message } from 'antd';
-import { Activity, Edit, Plus, Search, Trash } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable } from '@/shared/components/common';
+import { AppDrawer, AppPagination, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { DeviceStatusFormItems } from './devicestatusform';
 import { deleteDeviceStatus, fetchDeviceStatus, saveDeviceStatus } from './services/device-status.service';
 import type { DeviceStatusItem } from './types/device-status.types';
@@ -101,68 +101,39 @@ export const DeviceStatus = () => {
       title: 'Status Name',
       dataIndex: 'statusName',
       key: 'statusName',
-      width: 160,
+      width: 200,
       render: (text: string, record: DeviceStatusItem) => (
-        <div
-          style={{
-            backgroundColor: `${record.colorCode || '#e5e7eb'}22`,
-            border: `1px solid ${record.colorCode || '#d1d5db'}55`,
-            padding: '5px 12px',
-            borderRadius: 999,
-            color: isDark ? '#f3f4f6' : '#243b5a',
-            fontWeight: 600,
-            display: 'inline-block',
-            minWidth: '120px',
-          }}
-        >
-          {text}
-        </div>
+        <StatusBadge status={text} colorCode={record.colorCode} />
       ),
     },
     {
       title: 'Status Code',
       dataIndex: 'code',
       key: 'code',
-      width: 150,
+      width: 160,
+      render: (text: string) => <span className="text-slate-600 dark:text-slate-300 font-medium">{text}</span>,
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 190,
+      width: 160,
+      align: 'center' as const,
       fixed: 'right' as const,
       render: (_: unknown, record: DeviceStatusItem) => (
-        <Space size="small">
+        <Space size="middle">
           <Button
+            type="primary"
+            size="small"
             onClick={() => handleEditStatus(record)}
-            icon={<Edit size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #1677ff',
-              background: '#1677ff',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(22,119,255,0.2)',
-            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3.5 py-1 rounded-md text-xs shadow-sm"
           >
             Edit
           </Button>
           <Button
+            danger
+            size="small"
             onClick={() => handleDeleteConfirm(record.id)}
-            icon={<Trash size={16} />}
-            style={{
-              height: 32,
-              borderRadius: 6,
-              border: '1.5px solid #f5222d',
-              background: '#f5222d',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: 14,
-              padding: '0 12px',
-              boxShadow: '0 4px 8px rgba(245,34,45,0.2)',
-            }}
+            className="font-medium px-3.5 py-1 rounded-md text-xs"
           >
             Delete
           </Button>
@@ -173,66 +144,55 @@ export const DeviceStatus = () => {
 
   return (
     <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
-      <div className="company-hero">
-        <div className="company-hero-content">
-          <div className="company-hero-icon" aria-hidden="true">
-            <Activity size={29} strokeWidth={1.8} />
-          </div>
-          <div>
-            <Title level={2} className="company-hero-title">Device Status</Title>
-            <Text className="company-hero-subtitle">Manage device status types and their display order</Text>
-          </div>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingStatus(null);
-            setDrawerOpen(true);
-          }}
-          icon={<Plus size={18} />}
-          className="company-add-button"
-        >
-          Add Device Status
-        </Button>
-      </div>
-
-      <div className="company-toolbar">
-        <Input
-          allowClear
-          prefix={<Search size={17} />}
-          value={search}
-          placeholder="Search status name or code..."
-          aria-label="Search status name or code"
-          style={{ maxWidth: 280 }}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(1);
-          }}
-        />
-      </div>
-
-      <div className="company-table-card">
-        <AppTable<DeviceStatusItem>
-          className="company-table"
-          columns={columns}
-          dataSource={statuses}
-          rowKey="id"
-          emptyDescription="No device status types found"
-          pagination={false}
-          loading={loading}
-        />
-
-        <div className="company-pagination">
-          <AppPagination
-            current={page}
-            pageSize={pageSize}
-            total={total}
-            onChange={(newPage, newPageSize) => {
-              setPage(newPage);
-              setPageSize(newPageSize);
+      {/* Hero Header Card */}
+      <PageHeaderCard
+        title="Device Status"
+        description="Manage device status types, colors, and operational definitions."
+        actions={
+          <Button
+            onClick={() => {
+              setEditingStatus(null);
+              setDrawerOpen(true);
             }}
-          />
-        </div>
-      </div>
+            icon={<Plus size={16} className="text-[#092347]" />}
+            className="bg-white hover:bg-slate-100 text-[#092347] font-semibold px-4 py-2 h-10 rounded-lg text-sm border-0 shadow-sm flex items-center gap-2 cursor-pointer"
+          >
+            Add Device Status
+          </Button>
+        }
+      />
+
+      {/* Toolbar Search Card */}
+      <PageToolbarCard
+        searchPlaceholder="Search status name or code..."
+        searchValue={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setPage(1);
+        }}
+        showFilterButton={false}
+      />
+
+      {/* Device Status table card */}
+      <AppTable<DeviceStatusItem>
+        className="company-table"
+        columns={columns}
+        dataSource={statuses}
+        rowKey="id"
+        emptyDescription="No device status types found"
+        pagination={false}
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        serverPagination={{
+          current: page,
+          pageSize: pageSize,
+          total: total,
+          onChange: (nextPage, nextSize) => {
+            setPage(nextPage);
+            setPageSize(nextSize);
+          },
+        }}
+      />
 
       <Modal
         open={deleteConfirmOpen}
