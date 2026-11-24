@@ -497,6 +497,34 @@ h4, .ant-typography h4 {
   font-weight: 600;
 }
 
+.dark .purchase-app-drawer .ndp-input__control {
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  box-sizing: border-box;
+  border-color: #454545 !important;
+  background: #252525 !important;
+  color: #e6eef9 !important;
+}
+
+.dark .purchase-app-drawer .ndp-input__control input {
+  height: 100% !important;
+  background: transparent !important;
+  color: #e6eef9 !important;
+}
+
+.dark .purchase-app-drawer .ndp-input__control input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.dark .purchase-app-drawer .ndp-input__control button {
+  width: 32px !important;
+  height: 30px !important;
+  border-color: #454545 !important;
+  background: #333333 !important;
+  color: #cbd5e1 !important;
+}
+
 .company-hero {
   display: flex;
   align-items: center;
@@ -688,11 +716,8 @@ h4, .ant-typography h4 {
 }
 
 .company-table-card .ant-table-thead > tr > th,
-  .device-status-table-card .ant-table-thead > tr > th,
-  .app-table-container .ant-table-thead > tr > th,
-  .company-table-card .ant-table-thead > tr > th > *,
-  .device-status-table-card .ant-table-thead > tr > th > *,
-  .app-table-container .ant-table-thead > tr > th > * {
+.device-status-table-card .ant-table-thead > tr > th,
+.app-table-container .ant-table-thead > tr > th {
   border-bottom: 1px solid #cfe0f5 !important;
   color: #1e3a5f !important;
   background: #eaf2ff !important;
@@ -700,6 +725,12 @@ h4, .ant-typography h4 {
   font-weight: 700 !important;
   padding: 10px 16px !important;
   white-space: nowrap;
+}
+
+.company-table-card .ant-table-thead > tr > th > *,
+.device-status-table-card .ant-table-thead > tr > th > *,
+.app-table-container .ant-table-thead > tr > th > * {
+  background: transparent !important;
 }
 
 .company-table-card .ant-table-tbody > tr > td,
@@ -1028,6 +1059,17 @@ body.dark-mode .app-table-container .ant-empty-description,
   color: #e6eef9;
 }
 
+body.dark-mode .ant-select-input,
+.dark .ant-select-input {
+  background: transparent !important;
+}
+
+body.dark-mode .ant-select-content-value,
+.dark .ant-select-content-value {
+  color: #e6eef9 !important;
+  background: transparent !important;
+}
+
 .content-area.dark .company-page .ant-modal-content,
 .content-area.dark .company-page .ant-modal-body {
   background: #171d2b;
@@ -1222,6 +1264,42 @@ body.dark-mode .app-table-container .ant-empty-description,
 .content-area.dark .purchase-page .company-table-card .ant-table-cell-fix-right {
   border-color: #2b3850;
   background: #171d2b;
+}
+
+.content-area.dark .purchase-filter-controls .purchase-filter-date-label {
+  color: #cbd5e1;
+}
+
+.content-area.dark .purchase-filter-controls .ant-select-selector {
+  border-color: #4d6483 !important;
+  background: #202a3d !important;
+  color: #e6eef9 !important;
+}
+
+.content-area.dark .purchase-filter-controls .ant-select-content-value,
+.content-area.dark .purchase-filter-controls .ant-select-arrow {
+  color: #e6eef9 !important;
+}
+
+.content-area.dark .purchase-filter-controls .ndp-input__control {
+  border-color: #4d6483 !important;
+  background: #202a3d !important;
+  color: #e6eef9 !important;
+}
+
+.content-area.dark .purchase-filter-controls .ndp-input__control input {
+  background: transparent !important;
+  color: #e6eef9 !important;
+}
+
+.content-area.dark .purchase-filter-controls .ndp-input__control input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.content-area.dark .purchase-filter-controls .ndp-input__control button {
+  border-color: #4d6483 !important;
+  background: #28364d !important;
+  color: #cbd5e1 !important;
 }
 
 .content-area.dark .purchase-page .company-table-card .ant-table-thead > tr > th {

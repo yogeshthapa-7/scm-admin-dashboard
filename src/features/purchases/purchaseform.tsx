@@ -43,7 +43,7 @@ export const PurchaseForm = ({
           >
             <NepaliDatePicker
               returnEnglishDate
-              className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-slate-600 dark:bg-[#202a3d] dark:text-slate-100 dark:placeholder:text-slate-400"
             />
           </Form.Item>
 

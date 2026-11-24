@@ -458,12 +458,12 @@ export const PurchaseRecord = () => {
         filtersOpen={filtersOpen}
         onToggleFilters={() => setFiltersOpen(!filtersOpen)}
         filterContent={
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="purchase-filter-controls flex flex-wrap items-end gap-3">
             <Select
               value={statusDraft}
               onChange={(value) => setStatusDraft(value)}
               style={{ width: 160 }}
-              className="h-9"
+              className="purchase-filter-status h-9"
               options={[
                 { value: 'all', label: 'All Status' },
                 { value: '2', label: 'Draft' },
@@ -473,13 +473,13 @@ export const PurchaseRecord = () => {
               ]}
             />
             <div style={{ display: 'flex', gap: 8, alignItems: 'end', flexWrap: 'wrap' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+              <label className="purchase-filter-date-label flex flex-col gap-1 text-xs font-medium">
                 From
-                <NepaliDatePicker value={fromDateDraft} returnEnglishDate placeholder="From date" onChange={(value) => setFromDateDraft(value)} />
+                <NepaliDatePicker className="purchase-filter-date-input" value={fromDateDraft} returnEnglishDate placeholder="From date" onChange={(value) => setFromDateDraft(value)} />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+              <label className="purchase-filter-date-label flex flex-col gap-1 text-xs font-medium">
                 To
-                <NepaliDatePicker value={toDateDraft} returnEnglishDate placeholder="To date" onChange={(value) => setToDateDraft(value)} />
+                <NepaliDatePicker className="purchase-filter-date-input" value={toDateDraft} returnEnglishDate placeholder="To date" onChange={(value) => setToDateDraft(value)} />
               </label>
             </div>
             <Button
@@ -513,6 +513,7 @@ export const PurchaseRecord = () => {
             dataIndex: 'refNo',
             key: 'refNo',
             width: 140,
+            align: 'center',
             sorter: (a, b) => a.refNo.localeCompare(b.refNo),
             render: (text: string, record: Purchase) => (
               <span
@@ -531,6 +532,7 @@ export const PurchaseRecord = () => {
             dataIndex: 'trnDate',
             key: 'trnDate',
             width: 140,
+            align: 'center',
             sorter: (a, b) => a.trnDate.localeCompare(b.trnDate),
             render: (text: string) => (
               <span className="text-black dark:text-slate-100 font-normal">{formatDisplayDate(text)}</span>
@@ -541,6 +543,7 @@ export const PurchaseRecord = () => {
             dataIndex: 'make',
             key: 'make',
             width: 130,
+            align: 'center',
             sorter: (a, b) => a.make.localeCompare(b.make),
             render: (text: string) => (
               <span className="text-black dark:text-slate-100 font-medium">{text}</span>
@@ -551,6 +554,7 @@ export const PurchaseRecord = () => {
             dataIndex: 'deviceModel',
             key: 'deviceModel',
             width: 140,
+            align: 'center',
             sorter: (a, b) => a.deviceModel.localeCompare(b.deviceModel),
             render: (text: string) => (
               <span className="text-black dark:text-slate-100">{text}</span>
@@ -561,6 +565,7 @@ export const PurchaseRecord = () => {
             dataIndex: 'snPrefix',
             key: 'snPrefix',
             width: 150,
+            align: 'center',
             sorter: (a, b) => a.snPrefix.localeCompare(b.snPrefix),
             render: (text: string, record: Purchase) => (
               <span className="text-black dark:text-slate-100">
@@ -583,6 +588,7 @@ export const PurchaseRecord = () => {
             dataIndex: 'status',
             key: 'status',
             width: 130,
+            align: 'center',
             sorter: (a, b) => a.status - b.status,
             render: (status: PurchaseStatus) => (
               <StatusBadge status={STATUS_LABELS[status] || status} />
@@ -664,6 +670,7 @@ export const PurchaseRecord = () => {
           setRejectFormReason('');
         }}
         title={viewingPurchase ? 'View Purchase' : editingPurchase ? 'Edit Purchase' : 'Create Purchase'}
+        rootClassName="purchase-app-drawer"
         confirmText={viewingPurchase ? 'Close' : 'Save Purchase'}
         width={800}
         onSave={viewingPurchase ? () => {} : handleSavePurchase}
