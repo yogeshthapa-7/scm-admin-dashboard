@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
-import { Trash, Edit, Plus, RefreshCcw } from 'lucide-react';
+import { Button, Form, Input, Modal, Space, message } from 'antd';
+import { Plus, RefreshCcw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
+import { AppDrawer, AppTable, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { deleteCompanyInfo, fetchCompanyInfo, saveCompanyInfo } from './services/company-info.service';
 import type { CompanyInfoItem } from './types/company-info.types';
 
-const { Title, Text } = Typography;
+
 
 export const CompanyInfo = () => {
   const { mode } = useTheme();

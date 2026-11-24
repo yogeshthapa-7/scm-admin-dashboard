@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Form, Input, Modal, Space, Typography, message } from 'antd';
+import { Button, Form, Input, Modal, Space, message } from 'antd';
 import { Plus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
+import { AppDrawer, AppTable, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { deleteDeviceModel, fetchDeviceModels, saveDeviceModel } from './services/device-model.service';
 import type { DeviceModelItem } from './types/device-model.types';
 
-const { Title, Text } = Typography;
+
 
 export const DeviceModel = () => {
   const { mode } = useTheme();

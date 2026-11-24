@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Input, Modal, Space, Typography, message } from 'antd';
+import { Button, Modal, Space, message } from 'antd';
 import { Plus } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
+import { AppDrawer, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { DeviceStatusFormItems } from './devicestatusform';
 import { deleteDeviceStatus, fetchDeviceStatus, saveDeviceStatus } from './services/device-status.service';
 import type { DeviceStatusItem } from './types/device-status.types';
 
-const { Title, Text } = Typography;
+
 
 export const DeviceStatus = () => {
   const { mode } = useTheme();

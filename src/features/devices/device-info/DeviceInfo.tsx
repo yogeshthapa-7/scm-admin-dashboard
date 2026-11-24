@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Form, Input, Modal, Select, Space, Typography, message } from 'antd';
+import { Button, Form, Input, Modal, Select, Space, message } from 'antd';
 import { RefreshCw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
+import { AppDrawer, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import { deleteDevice, fetchDevices, saveDevice } from './services/device.service';
 import { fetchPurchases } from '@/features/purchases/services/purchase-master.service';
 import { fetchDeviceStatus } from '@/features/devices/device-status/services/device-status.service';
 import type { DeviceItem, DeviceSavePayload } from './types/device.types';
 
-const { Title, Text } = Typography;
+
 
 export const DeviceInfo = () => {
   const { mode } = useTheme();

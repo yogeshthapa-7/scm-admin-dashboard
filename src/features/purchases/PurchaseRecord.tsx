@@ -2,29 +2,21 @@ import { useState, useMemo, useEffect } from 'react';
 import {
   Tag,
   Button,
-  Typography,
   Modal,
   Input,
   Select,
-  Dropdown,
-  theme,
   message,
 } from 'antd';
 import {
-  Search,
   Plus,
   Edit,
   CheckCircle2,
   RefreshCw,
   Trash2,
-  SlidersHorizontal,
   Eye,
-  ShoppingCart,
-  Filter,
-  MoreVertical,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
-import { AppDrawer, AppPagination, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
+import { AppDrawer, AppTable, StatusBadge, PageHeaderCard, PageToolbarCard } from '@/shared/components/common';
 import NepaliDatePicker from '@/shared/components/common/nepaliDatePicker';
 import { PurchaseForm } from './purchaseform';
 import {
@@ -41,8 +33,6 @@ import {
   formatDisplayDate,
   todayEnglish,
 } from '@/utils/dateConverter';
-
-const { Title, Text } = Typography;
 
 type PurchaseStatus = 0 | 1 | 2 | 3 | 4;
 
@@ -127,7 +117,6 @@ function getNextSnStart(
 
 export const PurchaseRecord = () => {
   const { mode } = useTheme();
-  const { token } = theme.useToken();
   const isDark = mode === 'dark';
 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -135,7 +124,6 @@ export const PurchaseRecord = () => {
   const [deviceModels, setDeviceModels] = useState<DeviceModelItem[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -200,7 +188,6 @@ export const PurchaseRecord = () => {
     }).then((result) => {
       if (!cancelled) {
         setPurchases(result.items);
-        setTotal(result.items.length);
         setLoading(false);
       }
     }).catch(() => {
@@ -259,9 +246,9 @@ export const PurchaseRecord = () => {
     const snPrefix = String(values.snPrefix || '').trim();
     const snPadding = Number(values.snPadding);
     const totalItem = Number(values.totalItem);
-    const startingNumber = Number(values.startingNumber) > 0 ? Number(values.startingNumber) : getNextSnStart(snPrefix, allPurchases, editingPurchase?.id ?? null);
     const allPurchasesResult = await fetchPurchases({ length: 999 });
     const allPurchases = allPurchasesResult.items;
+    const startingNumber = Number(values.startingNumber) > 0 ? Number(values.startingNumber) : getNextSnStart(snPrefix, allPurchases, editingPurchase?.id ?? null);
     const snStart = startingNumber;
 
     const newSerials = Array.from({ length: totalItem }, (_, index) =>
@@ -307,7 +294,6 @@ export const PurchaseRecord = () => {
       setEditingPurchase(null);
       const refreshed = await fetchPurchases({ search, status: statusFilter === 'all' ? undefined : statusFilter, start: (page - 1) * pageSize, length: pageSize });
       setPurchases(refreshed.items);
-      setTotal(refreshed.total);
     } catch (error: any) {
       message.error(error?.message || 'Failed to save purchase');
     }
@@ -328,7 +314,6 @@ export const PurchaseRecord = () => {
       length: 100000,
     });
     setPurchases(refreshed.items);
-    setTotal(refreshed.items.length);
     const updated = refreshed.items.find((item) => item.id === viewingPurchase?.id) ?? null;
     const selectedUpdated = refreshed.items.find((item) => item.id === selectedPurchase?.id) ?? null;
     setViewingPurchase(updated);
@@ -357,7 +342,6 @@ export const PurchaseRecord = () => {
       const result = await deletePurchase(purchase.id);
       if (!result.success) throw new Error(result.message || 'Failed to delete purchase');
       setPurchases((prev) => prev.filter((item) => item.id !== purchase.id));
-      setTotal((value) => Math.max(0, value - 1));
       setDeleteConfirmOpen(false);
       setDeleteTargetPurchase(null);
       if (viewingPurchase?.id === purchase.id) setViewingPurchase(null);
