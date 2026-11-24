@@ -135,6 +135,7 @@ export async function savePurchase(payload: PurchaseSavePayload): Promise<{ succ
     snPrefix: payload.snPrefix,
     snPadding: Number(payload.snPadding),
     totalQty: Number(payload.totalItem),
+    startingNumber: Number(payload.startingNumber),
   };
   const res = isUpdate
     ? await api.put(`${UPDATE_URL}/${id}?action=UpdatePurchase`, body)

@@ -59,6 +59,7 @@ interface Purchase {
   snPrefix: string;
   snPadding: number;
   snStart?: number;
+  startingNumber?: number;
   totalItem: number;
   status: PurchaseStatus;
   rejectedDate?: string;
@@ -258,9 +259,10 @@ export const PurchaseRecord = () => {
     const snPrefix = String(values.snPrefix || '').trim();
     const snPadding = Number(values.snPadding);
     const totalItem = Number(values.totalItem);
+    const startingNumber = Number(values.startingNumber) > 0 ? Number(values.startingNumber) : getNextSnStart(snPrefix, allPurchases, editingPurchase?.id ?? null);
     const allPurchasesResult = await fetchPurchases({ length: 999 });
     const allPurchases = allPurchasesResult.items;
-    const snStart = getNextSnStart(snPrefix, allPurchases, editingPurchase?.id ?? null);
+    const snStart = startingNumber;
 
     const newSerials = Array.from({ length: totalItem }, (_, index) =>
       generateSerialNumber(snPrefix, snPadding, snStart + index)
@@ -295,6 +297,7 @@ export const PurchaseRecord = () => {
       snStart,
       totalItem,
       status: editingPurchase?.status ?? 2,
+      startingNumber,
     };
 
     try {
@@ -669,6 +672,7 @@ export const PurchaseRecord = () => {
           snPrefix: viewingPurchase?.snPrefix || editingPurchase?.snPrefix || 'SN',
           snPadding: viewingPurchase?.snPadding || editingPurchase?.snPadding || 3,
           totalItem: viewingPurchase?.totalItem || editingPurchase?.totalItem || 1,
+          startingNumber: viewingPurchase?.startingNumber ?? editingPurchase?.startingNumber ?? 1,
         }}
       >
         {viewingPurchase ? (

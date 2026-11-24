@@ -15,6 +15,7 @@ export interface Purchase {
   snPrefix: string;
   snPadding: number;
   snStart?: number;
+  startingNumber?: number;
   totalItem: number;
   status: PurchaseStatus;
   rejectedDate?: string;
@@ -40,6 +41,7 @@ export interface PurchaseFormValues {
   snPrefix: string;
   snPadding: number;
   totalItem: number;
+  startingNumber?: number;
 }
 
 export interface PurchaseFormProps {

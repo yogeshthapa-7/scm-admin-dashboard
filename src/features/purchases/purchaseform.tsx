@@ -12,6 +12,7 @@ export interface PurchaseFormValues {
   snPrefix: string;
   snPadding: number;
   totalItem: number;
+  startingNumber: number;
 }
 
 interface PurchaseFormProps {
@@ -128,7 +129,7 @@ export const PurchaseForm = ({
           Serial Number Configuration
         </Text>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <Form.Item
             name="snPrefix"
             label="SN Prefix"
@@ -152,6 +153,17 @@ export const PurchaseForm = ({
             />
           </Form.Item>
 
+            <Form.Item
+            name="startingNumber"
+            label="Starting Number"
+            rules={[{ required: true, message: 'Please enter starting number' }]}
+          >
+            <InputNumber
+              min={1}
+              className="w-[60px] h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </Form.Item>
+
           <Form.Item
             name="totalItem"
             label="Total Items"
@@ -162,6 +174,8 @@ export const PurchaseForm = ({
               className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </Form.Item>
+
+        
         </div>
       </div>
     </>
