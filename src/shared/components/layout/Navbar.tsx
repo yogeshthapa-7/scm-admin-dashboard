@@ -4,18 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/shared/components/common/ThemeToggle';
 import { useTheme } from '@/context/ThemeContext';
 import { logout, getAuthUser } from '@/auth/services/login.service';
+import { getClientBranding } from '@/config/client-branding';
 
 const { Header } = Layout;
-
-// const COMPANIES = JSON.parse(import.meta.env.VITE_COMPANIES || '[]');
 
 export const Navbar = ({ onMenuClick }: { onMenuClick: () => void }) => {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
   const navigate = useNavigate();
   const user = getAuthUser();
-  const CLIENT_CODE = import.meta.env.VITE_CLIENT_CODE;
-  const title = CLIENT_CODE === 'EVOLUTE' ? 'evolute device management admin portal' : 'SCM Device Management Admin Portal';
+  const { title } = getClientBranding();
 
   const handleLogout = () => {
     logout();

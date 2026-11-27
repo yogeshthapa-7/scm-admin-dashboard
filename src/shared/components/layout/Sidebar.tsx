@@ -14,17 +14,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTheme } from '@/context/ThemeContext';
-import scmLogo from '@/assets/images/new_scm_logo.png';
-import scmCollapsedLogo from '@/assets/images/scm_collapsed.png';
-import evoluteLogo from '@/assets/images/evolute.png';
-import evoluteCollapsedLogo from '@/assets/images/evolute_collapse.png';
-
-const CLIENT_CODE = import.meta.env.VITE_CLIENT_CODE;
-
-const getClientLogo = () => {
-  if (CLIENT_CODE === 'EVOLUTE') return { expanded: evoluteLogo, collapsed: evoluteCollapsedLogo };
-  return { expanded: scmLogo, collapsed: scmCollapsedLogo };
-};
+import { getClientBranding } from '@/config/client-branding';
 
 const { Sider } = Layout;
 
@@ -77,13 +67,13 @@ export const Sidebar = ({ open, onClose, collapsed }: SidebarProps) => {
   }, [location.pathname, onClose]);
 
   const sidebarContent = (isCollapsed: boolean) => {
-    const { expanded, collapsed } = getClientLogo();
-    const logo = isCollapsed ? collapsed : expanded;
+    const { logo: expandedLogo, collapsedLogo, code, slogan } = getClientBranding();
+    const logo = isCollapsed ? collapsedLogo : expandedLogo;
     return (
       <div className="sidebar-content">
         <div style={{ paddingTop: 0, paddingBottom: 8, padding:20, textAlign: 'center' }}>
-          <img src={logo} alt="SCM" className={isCollapsed ? 'sidebar-logo sidebar-logo-collapsed' : 'sidebar-logo'} />
-          {!isCollapsed && <div className="sidebar-slogan">Biometric Access Control</div>}
+          <img src={logo} alt={code} className={isCollapsed ? 'sidebar-logo sidebar-logo-collapsed' : 'sidebar-logo'} />
+          {!isCollapsed && slogan && <div className="sidebar-slogan">{slogan}</div>}
         </div>
         <div
           style={{
