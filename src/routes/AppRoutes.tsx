@@ -5,6 +5,7 @@ import { DeviceStatus } from '@/features/devices/device-status/DeviceStatus';
 import { DeviceModel } from '@/features/devices/device-modal/DeviceModel';
 import { DeviceInfo } from '@/features/devices/device-info/DeviceInfo';
 import { DeviceStatusChangeRecord } from '@/features/devices/device-status-change-record/DeviceStatusChangeRecord';
+import { Users } from '@/features/users/Users';
 import { PurchaseRecord } from '@/features/purchases/PurchaseRecord';
 import { CompanyInfo } from '@/features/companies/CompanyInfo';
 import { ReportsPage } from '@/features/reports/ReportsPage';
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
       { path: 'purchase', element: <PurchaseRecord /> },
       { path: 'device', element: <DeviceInfo /> },
       { path: 'device-status-change-record', element: <DeviceStatusChangeRecord /> },
+      { path: 'users', element: <Users /> },
       { path: 'reports', element: <ReportsPage /> },
     ],
   },

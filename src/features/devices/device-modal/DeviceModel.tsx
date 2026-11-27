@@ -235,6 +235,7 @@ export const DeviceModel = () => {
           name="name"
           label="Model Name"
           rules={[{ required: true, message: 'Please enter model name' }]}
+          style={{width: '70%'}}
         >
           <Input placeholder="Enter model name" />
         </Form.Item>

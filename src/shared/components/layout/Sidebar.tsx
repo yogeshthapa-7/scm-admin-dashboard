@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   Cpu,
   History,
+  User,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -28,6 +29,7 @@ const menuItems = [
       { key: '/device-status', label: 'Device Status', icon: <Laptop size={20} /> },
       { key: '/company-info', label: 'Company Info', icon: <Building2 size={20} /> },
       { key: '/device-modal', label: 'Device Modal', icon: <Monitor size={20} /> },
+      { key: '/users', label: 'Users', icon: <User size={20} /> },
     ],
   },
   {
