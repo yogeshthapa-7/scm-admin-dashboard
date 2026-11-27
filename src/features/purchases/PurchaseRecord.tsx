@@ -668,6 +668,7 @@ export const PurchaseRecord = () => {
             key: 'actions',
             width: 120,
             align: 'center' as const,
+            fixed: 'right' as const,
             render: (_: any, record: Purchase) => (
               <div className="flex items-center justify-center gap-3">
                 <button
