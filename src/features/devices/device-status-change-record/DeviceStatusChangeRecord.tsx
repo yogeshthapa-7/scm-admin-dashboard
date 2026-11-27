@@ -171,19 +171,19 @@ export const DeviceStatusChangeRecord = () => {
           setSearch(val);
           setPage(1);
         }}
-        showFilterButton={false}
-        extra={
-          <Button
-            onClick={() => {
-              const params = new URLSearchParams(searchParams.toString());
-              params.delete('deviceInfoId');
-              window.history.replaceState(null, '', `?${params.toString()}`);
-            }}
-            className="h-10 px-3 rounded-lg font-medium text-sm border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-[#1e2538]"
-          >
-            Clear Device Filter
-          </Button>
-        }
+        // showFilterButton={false}
+        // extra={
+        //   <Button
+        //     onClick={() => {
+        //       const params = new URLSearchParams(searchParams.toString());
+        //       params.delete('deviceInfoId');
+        //       window.history.replaceState(null, '', `?${params.toString()}`);
+        //     }}
+        //     className="h-10 px-3 rounded-lg font-medium text-sm border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-[#1e2538]"
+        //   >
+        //     Clear Device Filter
+        //   </Button>
+        // }
       />
 
       <AppTable<DeviceStatusChangeRecord>

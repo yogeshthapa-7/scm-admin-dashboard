@@ -123,7 +123,7 @@ export const Sidebar = ({ open, onClose, collapsed }: SidebarProps) => {
     <>
       <Sider
         className="desktop-sidebar"
-        width={290}
+        width={320}
         collapsedWidth={80}
         collapsed={collapsed}
         collapsible

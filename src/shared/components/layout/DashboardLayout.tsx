@@ -46,17 +46,17 @@ export const DashboardLayout = () => {
   }, []);
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ height: '100dvh', overflow: 'hidden' }}>
       <Sidebar
         open={mobileMenuOpen}
         onClose={handleMobileClose}
         collapsed={collapsed}
       />
-      <Layout>
+      <Layout style={{ minHeight: 0 }}>
         <Navbar onMenuClick={handleMenuClick} />
         <Content
           className={`content-area p-6 lg:p-8 xl:p-10 ${isDark ? 'dark' : ''} overflow-y-auto`}
-          style={{ transition: 'background 0.5s ease', height: '100dvh', overflowY: 'auto' }}
+          style={{ transition: 'background 0.5s ease', flex: 1, minHeight: 0, overflowY: 'auto' }}
         >
           <div style={{ marginTop: -16, paddingBottom: 24 }}>
             <Breadcrumb
