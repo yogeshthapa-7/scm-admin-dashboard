@@ -19,13 +19,18 @@ interface PurchaseFormProps {
   deviceModels: { id: string; name: string; make: string }[];
   companyName: string;
   make: string;
+  isEditing?: boolean;
+  getNextStartingNumber?: (prefix: string) => number;
 }
 
 export const PurchaseForm = ({
   deviceModels,
   companyName,
   make,
+  isEditing = false,
+  getNextStartingNumber,
 }: PurchaseFormProps) => {
+  const form = Form.useFormInstance();
   return (
     <>
       <div>
@@ -137,6 +142,11 @@ export const PurchaseForm = ({
           >
             <Input
               placeholder="SN"
+              onChange={(e) => {
+                if (!isEditing && getNextStartingNumber) {
+                  form.setFieldValue('startingNumber', getNextStartingNumber(e.target.value));
+                }
+              }}
               className="w-full h-[38px] rounded-[8px] border-[1.5px] border-gray-300 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </Form.Item>

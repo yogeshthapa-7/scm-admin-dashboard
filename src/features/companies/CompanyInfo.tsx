@@ -201,16 +201,18 @@ export const CompanyInfo = () => {
         title="Company Information"
         description="Manage company details, contacts, and configuration."
         actions={
-          <Button
-            onClick={() => {
-              setEditingCompany(null);
-              setDrawerOpen(true);
-            }}
-            icon={<Plus size={16} className="text-[#092347]" />}
-            className="bg-white hover:bg-slate-100 text-[#092347] font-semibold px-4 py-2 h-10 rounded-lg text-sm border-0 shadow-sm flex items-center gap-2 cursor-pointer"
-          >
-            Add Company
-          </Button>
+          companies.length === 0 && (
+            <Button
+              onClick={() => {
+                setEditingCompany(null);
+                setDrawerOpen(true);
+              }}
+              icon={<Plus size={16} className="text-[#092347]" />}
+              className="bg-white hover:bg-slate-100 text-[#092347] font-semibold px-4 py-2 h-10 rounded-lg text-sm border-0 shadow-sm flex items-center gap-2 cursor-pointer"
+            >
+              Add Company
+            </Button>
+          )
         }
       />
 
@@ -218,10 +220,8 @@ export const CompanyInfo = () => {
       <PageToolbarCard
         searchPlaceholder="Search company name..."
         searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
+        onSearchChange={(val) => setSearch(val)}
+        onSearch={() => setPage(1)}
         showFilterButton={true}
         filtersOpen={filtersOpen}
         onToggleFilters={() => setFiltersOpen(!filtersOpen)}

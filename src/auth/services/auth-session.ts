@@ -7,14 +7,7 @@ export const ACCESS_TOKEN_EXPIRES_AT_KEY = 'access_token_expires_at';
 export const REFRESH_TOKEN_EXPIRES_AT_KEY = 'refresh_token_expires_at';
 export const USER_STORAGE_KEY = 'user';
 
-const LEGACY_AUTH_KEYS = [
-  'scm_auth',
-  'scm_access_token',
-  'scm_refresh_token',
-  'scm_access_token_expires_at',
-  'scm_refresh_token_expires_at',
-  'scm_user',
-];
+const LEGACY_AUTH_KEYS = ['auth'];
 
 export interface AuthTokens {
   accessToken: string;
@@ -96,7 +89,6 @@ export function clearSession(): void {
     ACCESS_TOKEN_EXPIRES_AT_KEY,
     REFRESH_TOKEN_EXPIRES_AT_KEY,
     USER_STORAGE_KEY,
-    'scm_company',
   ];
   [...keys, ...LEGACY_AUTH_KEYS].forEach((k) => localStorage.removeItem(k));
 }

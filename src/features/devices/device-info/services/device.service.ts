@@ -38,22 +38,44 @@ function failed(payload: any): boolean {
 }
 
 export async function fetchDevices(params: FetchDevicesParams = {}): Promise<FetchDevicesResult> {
-  const res = await api.get(API_URL, {
-    params: {
-      ...(params.purchaseMasterId ? { purchaseMasterId: params.purchaseMasterId } : {}),
-      ...(params.deviceStatusId ? { deviceStatusId: params.deviceStatusId } : {}),
-      ...(params.serialNo ? { serialNo: params.serialNo } : {}),
-    },
-    signal: params.signal,
-  });
-  const items = extractItems(res.data).filter((item) => (
-    (!params.purchaseMasterId || String(item.purchaseMasterId) === String(params.purchaseMasterId))
-    && (!params.deviceStatusId || String(item.deviceStatusId) === String(params.deviceStatusId))
-    && (!params.serialNo || item.serialNo?.toLowerCase().includes(params.serialNo.toLowerCase()))
-  ));
-  const start = params.start ?? 0;
-  const length = params.length ?? (items.length || 12);
-  return { items: items.slice(start, start + length), total: items.length, filtered: items.length };
+  const hasClientFilter = params.purchaseMasterId != null || params.deviceStatusId != null;
+  const requestBody = {
+    draw: 1,
+    start: hasClientFilter ? 0 : (params.start ?? 0),
+    length: hasClientFilter ? 100000 : (params.length ?? 12),
+    searchValue: params.serialNo ?? '',
+    sortColumn: '',
+    sortDirection: '',
+  };
+
+  const res = await api.post(
+    API_URL,
+    requestBody,
+    { signal: params.signal },
+  );
+  const data = res.data?.data ?? res.data?.items ?? res.data?.result ?? res.data?.records ?? res.data;
+  const allItems = extractItems(data);
+
+  if (hasClientFilter) {
+    const filtered = allItems.filter((item) => (
+      (params.purchaseMasterId == null || String(item.purchaseMasterId) === String(params.purchaseMasterId))
+      && (params.deviceStatusId == null || String(item.deviceStatusId) === String(params.deviceStatusId))
+      && (!params.serialNo || item.serialNo?.toLowerCase().includes(params.serialNo.toLowerCase()))
+    ));
+    const start = params.start ?? 0;
+    const length = params.length ?? (filtered.length || 12);
+    return {
+      items: filtered.slice(start, start + length),
+      total: filtered.length,
+      filtered: filtered.length,
+    };
+  }
+
+  return {
+    items: allItems,
+    total: res.data?.recordsTotal ?? res.data?.total ?? res.data?.totalCount ?? allItems.length,
+    filtered: res.data?.recordsFiltered ?? res.data?.filtered ?? res.data?.total ?? allItems.length,
+  };
 }
 
 export async function saveDevice(payload: DeviceSavePayload): Promise<{ success: boolean; message?: string; data?: unknown }> {

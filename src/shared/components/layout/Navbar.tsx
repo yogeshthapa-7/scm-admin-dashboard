@@ -14,12 +14,8 @@ export const Navbar = ({ onMenuClick }: { onMenuClick: () => void }) => {
   const isDark = mode === 'dark';
   const navigate = useNavigate();
   const user = getAuthUser();
-  // const [companyTitle] = useState<string>(() => {
-  //   const companyId = localStorage.getItem('scm_company') || 'scm';
-  //   const company = COMPANIES.find((c: any) => c.id === companyId);
-  //   return company?.title || 'SCM Device Management Admin Portal';
-  // });
-  const title = 'SCM Device Management Admin Portal';
+  const CLIENT_CODE = import.meta.env.VITE_CLIENT_CODE;
+  const title = CLIENT_CODE === 'EVOLUTE' ? 'evolute device management admin portal' : 'SCM Device Management Admin Portal';
 
   const handleLogout = () => {
     logout();

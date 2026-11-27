@@ -7,7 +7,7 @@ import { toBS } from '@arclogi/nepali-date-picker';
 import { useTheme } from '@/context/ThemeContext';
 import { AppTable, PageHeaderCard, PageToolbarCard, StatusBadge, AppDrawer } from '@/shared/components/common';
 import { fetchDeviceStatusChangeRecords, fetchDeviceStatusChangeRecordById } from './services/device-status-change.service';
-import type { DeviceStatusChangeRecord } from './types/device-status-change.types';
+import type { DeviceStatusChangeRecord as DeviceStatusChangeRecordType } from './types/device-status-change.types';
 
 const NEPALI_NUMERALS: Record<string, string> = {
   '0': '०', '1': '१', '2': '२', '3': '३', '4': '४',
@@ -32,7 +32,7 @@ export const DeviceStatusChangeRecord = () => {
   const [searchParams] = useSearchParams();
   const deviceInfoId = searchParams.get('deviceInfoId') ?? '';
 
-  const [records, setRecords] = useState<DeviceStatusChangeRecord[]>([]);
+  const [records, setRecords] = useState<DeviceStatusChangeRecordType[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [total, setTotal] = useState(0);
@@ -40,7 +40,7 @@ export const DeviceStatusChangeRecord = () => {
   const [search, setSearch] = useState('');
 
   const [viewDrawerOpen, setViewDrawerOpen] = useState(false);
-  const [viewTarget, setViewTarget] = useState<DeviceStatusChangeRecord | null>(null);
+  const [viewTarget, setViewTarget] = useState<DeviceStatusChangeRecordType | null>(null);
 
   const loadRecords = useCallback(async () => {
     setLoading(true);
@@ -58,12 +58,12 @@ export const DeviceStatusChangeRecord = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, search, deviceInfoId]);
+  }, [page, pageSize, deviceInfoId]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     void loadRecords();
-  }, [loadRecords]);
+  }, [loadRecords, page, pageSize]);
 
   const handleView = async (id: number | string) => {
     try {
@@ -99,7 +99,7 @@ export const DeviceStatusChangeRecord = () => {
       dataIndex: 'targetDeviceStatusId',
       key: 'targetDeviceStatusId',
       width: 160,
-      render: (_: unknown, record: DeviceStatusChangeRecord) => (
+      render: (_: unknown, record: DeviceStatusChangeRecordType) => (
         <StatusBadge status={record.targetStatusName || `Status ${record.targetDeviceStatusId}`} />
       ),
     },
@@ -122,7 +122,7 @@ export const DeviceStatusChangeRecord = () => {
       dataIndex: 'changeDate',
       key: 'changeDate',
       width: 170,
-      render: (text: string, record: DeviceStatusChangeRecord) => (
+      render: (text: string, record: DeviceStatusChangeRecordType) => (
         <span className="text-black dark:text-slate-100 text-sm">
           {formatNepaliDate(record.changeDate ?? text)}
         </span>
@@ -134,7 +134,7 @@ export const DeviceStatusChangeRecord = () => {
       width: 120,
       align: 'center' as const,
       fixed: 'right' as const,
-      render: (_: unknown, record: DeviceStatusChangeRecord) => (
+      render: (_: unknown, record: DeviceStatusChangeRecordType) => (
         <Button
           size="small"
           onClick={() => handleView(record.id)}
@@ -167,26 +167,14 @@ export const DeviceStatusChangeRecord = () => {
       <PageToolbarCard
         searchPlaceholder="Search narration, status, or changed by..."
         searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
+        onSearchChange={(val) => setSearch(val)}
+        onSearch={() => {
           setPage(1);
+          void loadRecords();
         }}
-        // showFilterButton={false}
-        // extra={
-        //   <Button
-        //     onClick={() => {
-        //       const params = new URLSearchParams(searchParams.toString());
-        //       params.delete('deviceInfoId');
-        //       window.history.replaceState(null, '', `?${params.toString()}`);
-        //     }}
-        //     className="h-10 px-3 rounded-lg font-medium text-sm border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-[#1e2538]"
-        //   >
-        //     Clear Device Filter
-        //   </Button>
-        // }
       />
 
-      <AppTable<DeviceStatusChangeRecord>
+      <AppTable<DeviceStatusChangeRecordType>
         sectionTitle={deviceInfoId ? `Status Change Records for Device ${deviceInfoId}` : 'All Status Change Records'}
         className="company-table"
         columns={columns}
@@ -255,7 +243,7 @@ export const DeviceStatusChangeRecord = () => {
               <div className="bg-white dark:bg-[#171d2b] rounded-xl border border-slate-200 dark:border-slate-800 p-4">
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Changed Date</p>
                 <p className="text-sm text-slate-800 dark:text-slate-100 font-medium">
-                  {formatNepaliDate(viewTarget.changeDate)}
+                  {formatNepaliDate(viewTarget.changeDate ?? '')}
                 </p>
               </div>
               <div className="bg-white dark:bg-[#171d2b] rounded-xl border border-slate-200 dark:border-slate-800 p-4">

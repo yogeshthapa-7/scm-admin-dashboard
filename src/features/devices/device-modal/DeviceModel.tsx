@@ -160,6 +160,7 @@ export const DeviceModel = () => {
         searchPlaceholder="Search model name..."
         searchValue={search}
         onSearchChange={(val) => setSearch(val)}
+        onSearch={() => setPage(1)}
         showFilterButton={false}
       />
 

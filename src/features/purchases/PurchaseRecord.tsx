@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Tag,
   Button,
@@ -101,16 +101,16 @@ function getNextSnStart(
   purchases: Purchase[],
   excludePurchaseId?: number | null
 ) {
-  const normalizedPrefix = String(prefix || '').trim();
+  const normalizedPrefix = String(prefix || '').trim().toLowerCase();
   if (!normalizedPrefix) return 1;
 
   let maxEnd = 0;
 
   purchases.forEach((p) => {
-    if (p.status === 0) return;
+    if (p.status === 0 || p.status === 4) return;
     if (excludePurchaseId != null && p.id === excludePurchaseId) return;
-    if (String(p.snPrefix || '').trim() !== normalizedPrefix) return;
-    const start = p.snStart ?? 1;
+    if (String(p.snPrefix || '').trim().toLowerCase() !== normalizedPrefix) return;
+    const start = Number(p.startingNumber) > 0 ? Number(p.startingNumber) : (p.snStart ?? 1);
     const end = start + Number(p.totalItem || 0) - 1;
     if (end > maxEnd) maxEnd = end;
   });
@@ -321,17 +321,19 @@ export const PurchaseRecord = () => {
     );
     const taken = new Set<string>();
     allPurchases.forEach((p) => {
-      if (p.status === 0) return;
+      if (p.status === 0 || p.status === 4) return;
       if (editingPurchase && p.id === editingPurchase.id) return;
-      const pStart = p.snStart ?? 1;
+      const pStart = Number(p.startingNumber) > 0 ? Number(p.startingNumber) : (p.snStart ?? 1);
       for (let i = 0; i < p.totalItem; i += 1) {
         taken.add(generateSerialNumber(p.snPrefix, p.snPadding, pStart + i));
       }
     });
     const conflict = newSerials.find((serial) => taken.has(serial));
     if (conflict) {
-      alert(`Serial number ${conflict} already exists. Please use a different SN prefix or padding.`);
-      return;
+      const nextAvailable = getNextSnStart(snPrefix, allPurchases, editingPurchase?.id ?? null);
+      const errorMsg = `Serial number ${conflict} already exists. Next available starting number for "${snPrefix}" is ${nextAvailable}.`;
+      message.error(errorMsg);
+      throw new Error(errorMsg);
     }
 
     const payload: Purchase = {
@@ -514,9 +516,9 @@ export const PurchaseRecord = () => {
       <PageToolbarCard
         searchPlaceholder="Search reference number, model, or SN..."
         searchValue={searchDraft}
-        onSearchChange={(val) => {
-          setSearchDraft(val);
-          setSearch(val);
+        onSearchChange={(val) => setSearchDraft(val)}
+        onSearch={() => {
+          setSearch(searchDraft);
           setPage(1);
         }}
         showFilterButton={true}
@@ -757,7 +759,7 @@ export const PurchaseRecord = () => {
           snPrefix: viewingPurchase?.snPrefix || editingPurchase?.snPrefix || 'SN',
           snPadding: viewingPurchase?.snPadding || editingPurchase?.snPadding || 3,
           totalItem: viewingPurchase?.totalItem || editingPurchase?.totalItem || 1,
-          startingNumber: viewingPurchase?.startingNumber ?? editingPurchase?.startingNumber ?? 1,
+          startingNumber: viewingPurchase?.startingNumber ?? editingPurchase?.startingNumber ?? getNextSnStart('SN', purchases),
         }}
       >
         {viewingPurchase ? (
@@ -1132,6 +1134,8 @@ export const PurchaseRecord = () => {
             deviceModels={deviceModelsWithMake}
             companyName={companyName}
             make={companyMake}
+            isEditing={Boolean(editingPurchase)}
+            getNextStartingNumber={(prefix) => getNextSnStart(prefix, purchases)}
           />
         )}
       </AppDrawer>

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from '@/context/ThemeContext';
-import { Button, Input, Form, Select, message, Space } from 'antd';
-import { Plus } from 'lucide-react';
+import { Button, Input, Form, Select, message, Space, Modal } from 'antd';
+import { Plus, RefreshCcw } from 'lucide-react';
 import { AppTable, PageHeaderCard, PageToolbarCard, StatusBadge, AppDrawer } from '@/shared/components/common';
-import { mockUsers } from './mockUsers';
+import { userService } from './services/user.service';
 import type { User } from './types/user.types';
 
 const { Password } = Input;
@@ -43,32 +43,35 @@ export const Users = () => {
     label: '',
     color: '',
   });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | number | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const searchLower = search.trim().toLowerCase();
-      const filtered = mockUsers.filter(
-        (u) =>
-          u.name.toLowerCase().includes(searchLower) ||
-          u.email.toLowerCase().includes(searchLower) ||
-          u.role.toLowerCase().includes(searchLower),
-      );
-      const start = (page - 1) * pageSize;
-      const items = filtered.slice(start, start + pageSize);
-      setUsers(items);
-      setTotal(filtered.length);
+      const result = userService.fetchUsers({
+        search,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        role: roleFilter === 'all' ? undefined : roleFilter,
+        start: (page - 1) * pageSize,
+        length: pageSize,
+      });
+      setUsers(result.items);
+      setTotal(result.total);
     } catch {
       // noop
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, search]);
+  }, [page, pageSize, statusFilter, roleFilter]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     void loadUsers();
-  }, [loadUsers]);
+  }, [loadUsers, page, pageSize]);
 
   const handleSave = async (values: Record<string, unknown>) => {
     const name = String(values.name ?? '').trim();
@@ -92,21 +95,24 @@ export const Users = () => {
         message.error('Passwords do not match');
         return;
       }
-      const newUser: User = {
-        id: Date.now(),
+      userService.addUser({
         name,
         email,
         role,
         password,
         status: status as 'active' | 'inactive',
         createdAt: new Date().toISOString().slice(0, 10),
-      };
-      setUsers((prev) => [newUser, ...prev]);
-      setTotal((prev) => prev + 1);
+      });
     } else if (editingUser) {
-      setUsers((prev) =>
-        prev.map((u) => (String(u.id) === String(editingUser.id) ? { ...u, name, email, role, status } : u)),
-      );
+      const updates: Partial<User> = { name, email, role, status: status as 'active' | 'inactive' };
+      if (password) {
+        if (password !== confirmPassword) {
+          message.error('Passwords do not match');
+          return;
+        }
+        updates.password = password;
+      }
+      userService.updateUser(editingUser.id, updates);
     }
 
     message.success(drawerMode === 'add' ? 'User created successfully' : 'User updated successfully');
@@ -118,14 +124,23 @@ export const Users = () => {
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setDrawerMode('edit');
+    setPasswordStrength({ score: 0, label: '', color: '' });
     setDrawerOpen(true);
   };
 
-  const handleDeleteUser = async (id: number | string) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    setUsers((prev) => prev.filter((u) => String(u.id) !== String(id)));
-    setTotal((prev) => prev - 1);
-    message.success('User deleted successfully');
+  const handleDeleteConfirm = (id: string | number) => {
+    setDeleteTargetId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (deleteTargetId === null) return;
+    const success = userService.deleteUser(deleteTargetId);
+    if (success) {
+      message.success('User deleted successfully');
+    }
+    setDeleteTargetId(null);
+    setDeleteConfirmOpen(false);
     void loadUsers();
   };
 
@@ -177,7 +192,7 @@ export const Users = () => {
           <Button
             danger
             size="small"
-            onClick={() => handleDeleteUser(record.id)}
+            onClick={() => handleDeleteConfirm(record.id)}
             className="font-medium px-3.5 py-1 rounded-md text-xs"
           >
             Delete
@@ -187,18 +202,20 @@ export const Users = () => {
     },
   ];
 
-  const passwordField = drawerMode === 'add' ? (
+  const passwordField = (
     <>
       <Form.Item
         name="password"
         label="Password"
         rules={[
-          { required: true, message: 'Please enter password' },
+          ...(drawerMode === 'add'
+            ? [{ required: true, message: 'Please enter password' }]
+            : []),
           { min: 8, message: 'Password must be at least 8 characters' },
         ]}
       >
         <Password
-          placeholder="Enter password"
+          placeholder={drawerMode === 'add' ? 'Enter password' : 'Leave blank to keep current'}
           onChange={(e) => {
             setPasswordStrength(getPasswordStrength(e.target.value));
           }}
@@ -225,13 +242,15 @@ export const Users = () => {
         name="confirmPassword"
         label="Confirm Password"
         rules={[
-          { required: true, message: 'Please confirm your password' },
+          ...(drawerMode === 'add'
+            ? [{ required: true, message: 'Please confirm your password' }]
+            : []),
         ]}
       >
-        <Password placeholder="Confirm your password" />
+        <Password placeholder={drawerMode === 'add' ? 'Confirm your password' : 'Confirm new password' } />
       </Form.Item>
     </>
-  ) : null;
+  );
 
   return (
     <div className={`company-page ${isDark ? 'company-page-dark' : ''}`}>
@@ -255,13 +274,58 @@ export const Users = () => {
       />
 
       <PageToolbarCard
-        searchPlaceholder="Search name, email, or role..."
+        searchPlaceholder="Search name, or email..."
         searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
+        onSearchChange={(val) => setSearch(val)}
+        onSearch={() => {
           setPage(1);
+          void loadUsers();
         }}
-        showFilterButton={false}
+        showFilterButton={true}
+        filtersOpen={filtersOpen}
+        onToggleFilters={() => setFiltersOpen(!filtersOpen)}
+        filterContent={
+          <div className="flex flex-wrap items-end gap-3">
+            <Select
+              value={statusFilter}
+              onChange={(value) => { setStatusFilter(value); setPage(1); }}
+              placeholder="Filter by status"
+              className="w-full sm:w-56 h-9"
+              options={[
+                { label: 'All Status', value: 'all' },
+                { label: 'Active', value: 'active' },
+                { label: 'Inactive', value: 'inactive' },
+                { label: 'Pending', value: 'pending' },
+              ]}
+            />
+            <Select
+              value={roleFilter}
+              onChange={(value) => { setRoleFilter(value); setPage(1); }}
+              placeholder="Filter by role"
+              className="w-full sm:w-56 h-9"
+              options={[
+                { label: 'All Roles', value: 'all' },
+                { label: 'Admin', value: 'Admin' },
+                { label: 'Employee', value: 'Employee' },
+                { label: 'Super Admin', value: 'Super Admin' },
+                { label: 'User', value: 'User' },
+              ]}
+            />
+            <Button
+              onClick={() => {
+                setStatusFilter('all');
+                setRoleFilter('all');
+                setSearch('');
+                setPage(1);
+                setFiltersOpen(false);
+              }}
+               icon={<RefreshCcw size={15} />}
+              className="h-9"
+            >
+              Reset
+            </Button>
+          </div>
+        }
       />
 
       <AppTable<User>
@@ -303,7 +367,7 @@ export const Users = () => {
             : undefined
         }
       >
-        <Form layout="vertical" className="
+        <div className="
           [&_.ant-form-item]:mb-[12px]
           [&_.ant-input-affix-wrapper]:h-[38px]
           [&_.ant-input-affix-wrapper]:rounded-[8px]
@@ -366,8 +430,41 @@ export const Users = () => {
             />
           </Form.Item>
           {passwordField}
-        </Form>
+        </div>
       </AppDrawer>
+
+      <Modal
+        open={deleteConfirmOpen}
+        title="Delete User"
+        onOk={handleDeleteConfirmed}
+        onCancel={() => {
+          setDeleteTargetId(null);
+          setDeleteConfirmOpen(false);
+        }}
+        width={500}
+        zIndex={1100}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setDeleteTargetId(null);
+              setDeleteConfirmOpen(false);
+            }}
+            style={{ height: 38, borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', color: '#4b5563', fontWeight: 500 }}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="confirm"
+            onClick={handleDeleteConfirmed}
+            style={{ height: 38, borderRadius: 8, border: '1.5px solid #f5222d', background: '#f5222d', color: '#fff', fontWeight: 600, boxShadow: '0 4px 8px rgba(245,34,45,0.2)' }}
+          >
+            Confirm Delete
+          </Button>,
+        ]}
+      >
+        Are you sure you want to delete this user? This cannot be undone.
+      </Modal>
     </div>
   );
 };

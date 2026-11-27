@@ -25,7 +25,7 @@ export const DeviceStatus = () => {
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState('');
 
-  const loadData = useCallback(async (targetPage: number, size: number, query = search) => {
+  const loadData = useCallback(async (targetPage: number, size: number, query: string) => {
     try {
       setLoading(true);
       const start = (targetPage - 1) * size;
@@ -37,11 +37,12 @@ export const DeviceStatus = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     void loadData(page, pageSize, search);
-  }, [loadData, page, pageSize, search]);
+  }, [loadData, page, pageSize]);
 
   const handleSaveStatus = async (values: Record<string, unknown>) => {
     const payload = {
@@ -166,9 +167,10 @@ export const DeviceStatus = () => {
       <PageToolbarCard
         searchPlaceholder="Search status name or code..."
         searchValue={search}
-        onSearchChange={(val) => {
-          setSearch(val);
+        onSearchChange={(val) => setSearch(val)}
+        onSearch={() => {
           setPage(1);
+          void loadData(1, pageSize, search);
         }}
         showFilterButton={false}
       />

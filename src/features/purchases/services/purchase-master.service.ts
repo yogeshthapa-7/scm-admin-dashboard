@@ -63,15 +63,6 @@ function extractItems(payload: any): Purchase[] {
   return Array.isArray(list) ? list.map(toItem) : list ? [toItem(list)] : [];
 }
 
-function extractTotal(payload: any, items: Purchase[]): number {
-  const candidates = [payload?.recordsTotal, payload?.total, payload?.totalCount, payload?.recordsFiltered, payload?.data?.recordsTotal, payload?.data?.total, payload?.data?.totalCount];
-  for (const value of candidates) {
-    const total = Number(value);
-    if (Number.isFinite(total) && total >= 0) return total;
-  }
-  return items.length;
-}
-
 function addDerivedSerialStarts(items: Purchase[]): Purchase[] {
   const nextByPrefix = new Map<string, number>();
   const ordered = [...items].sort((a, b) => a.id - b.id);
@@ -99,25 +90,51 @@ function responseFailed(payload: any): boolean {
 }
 
 export async function fetchPurchases(params: FetchPurchasesParams = {}): Promise<FetchPurchasesResult> {
-  const res = await api.get(API_URL, { signal: params.signal });
-  const all = addDerivedSerialStarts(extractItems(res.data));
-  const search = (params.search ?? '').trim().toLowerCase();
-  const status = params.status == null ? '' : String(params.status);
-  const fromDate = params.fromDate ?? '';
-  const toDate = params.toDate ?? '';
-  const filtered = all.filter((purchase) => {
-    const matchesSearch = !search || purchase.refNo.toLowerCase().includes(search) || purchase.deviceModel.toLowerCase().includes(search) || purchase.make.toLowerCase().includes(search);
-    const transactionDate = purchase.trnDate.slice(0, 10);
-    const matchesDate = (!fromDate || transactionDate >= fromDate) && (!toDate || transactionDate <= toDate);
-    return matchesSearch && (!status || String(purchase.status) === status) && matchesDate;
-  });
-  const start = params.start ?? 0;
-  const length = params.length ?? (filtered.length || 12);
-  return { items: filtered.slice(start, start + length), total: search || status || fromDate || toDate ? filtered.length : extractTotal(res.data, all), filtered: filtered.length };
+  const hasClientFilter = params.status != null || Boolean(params.fromDate) || Boolean(params.toDate);
+  const requestBody = {
+    draw: 1,
+    start: hasClientFilter ? 0 : (params.start ?? 0),
+    length: hasClientFilter ? 100000 : (params.length ?? 12),
+    searchValue: params.search ?? '',
+    sortColumn: '',
+    sortDirection: '',
+  };
+
+  const res = await api.post(
+    API_URL,
+    requestBody,
+    { signal: params.signal },
+  );
+  const data = res.data?.data ?? res.data?.items ?? res.data?.result ?? res.data?.records ?? res.data;
+  const allItems = addDerivedSerialStarts(extractItems(data));
+
+  if (hasClientFilter) {
+    const status = params.status == null ? '' : String(params.status);
+    const fromDate = params.fromDate ?? '';
+    const toDate = params.toDate ?? '';
+    const filtered = allItems.filter((purchase) => {
+      const transactionDate = purchase.trnDate.slice(0, 10);
+      const matchesDate = (!fromDate || transactionDate >= fromDate) && (!toDate || transactionDate <= toDate);
+      return (!status || String(purchase.status) === status) && matchesDate;
+    });
+    const start = params.start ?? 0;
+    const length = params.length ?? (filtered.length || 12);
+    return {
+      items: filtered.slice(start, start + length),
+      total: filtered.length,
+      filtered: filtered.length,
+    };
+  }
+
+  return {
+    items: allItems,
+    total: res.data?.recordsTotal ?? res.data?.total ?? res.data?.totalCount ?? allItems.length,
+    filtered: res.data?.recordsFiltered ?? res.data?.filtered ?? res.data?.total ?? allItems.length,
+  };
 }
 
 export async function fetchPurchaseSelectList(): Promise<SelectListItem[]> {
-  const res = await api.get(API_URL);
+  const res = await api.post(API_URL, {});
   return extractItems(res.data).map((item) => ({ label: item.refNo, value: item.id }));
 }
 
@@ -154,7 +171,7 @@ export async function deletePurchase(id: number | string): Promise<{ success: bo
 }
 
 export async function approvePurchase(id: number | string): Promise<{ success: boolean; message?: string; data?: unknown }> {
-  const res = await api.post(APPROVE_URL(id));
+  const res = await api.post(APPROVE_URL(id), {});
   const data = res.data;
   if (responseFailed(data)) return { success: false, message: extractMessage(data, 'Failed to approve purchase'), data };
   return { success: true, message: extractMessage(data, 'Purchase approved successfully'), data };
@@ -175,18 +192,18 @@ export async function rejectPurchase(id: number | string, reason: string): Promi
 }
 
 export async function generatePurchaseDevices(id: number | string): Promise<{ success: boolean; message?: string; data?: unknown }> {
-  const res = await api.post(GENERATE_DEVICES_URL(id));
+  const res = await api.post(GENERATE_DEVICES_URL(id), {});
   const data = res.data;
   if (responseFailed(data)) return { success: false, message: extractMessage(data, 'Failed to generate devices'), data };
   return { success: true, message: extractMessage(data, 'Devices generated successfully'), data };
 }
 
 export const purchaseMasterService = {
-  serverSearch: (body: PurchaseServerSearchRequest, signal?: AbortSignal) => api.get<ApiListResponse<Purchase>>(API_URL, { params: body, signal }),
+  serverSearch: (body: PurchaseServerSearchRequest, signal?: AbortSignal) => api.post<ApiListResponse<Purchase>>(API_URL, body, { signal }),
   save: savePurchase,
   delete: deletePurchase,
   getById: (id: number | string) => api.get(`${GET_BY_ID_URL}/${id}`),
-  selectList: () => api.get(API_URL),
+  selectList: () => api.post(API_URL, {}),
   fetchPurchases,
   fetchPurchaseSelectList,
   savePurchase,

@@ -37,15 +37,6 @@ function extractItems(payload: any): CompanyInfoItem[] {
   return Array.isArray(list) ? list.map(toItem) : list ? [toItem(list)] : [];
 }
 
-function extractTotal(payload: any, items: CompanyInfoItem[]): number {
-  const candidates = [payload?.recordsTotal, payload?.total, payload?.totalCount, payload?.recordsFiltered, payload?.data?.recordsTotal, payload?.data?.total, payload?.data?.totalCount];
-  for (const value of candidates) {
-    const total = Number(value);
-    if (Number.isFinite(total) && total >= 0) return total;
-  }
-  return items.length;
-}
-
 function extractMessage(payload: any, fallback: string): string {
   return payload?.message ?? payload?.Message ?? payload?.msg ?? payload?.error ?? fallback;
 }
@@ -55,17 +46,29 @@ function responseFailed(payload: any): boolean {
 }
 
 export async function fetchCompanyInfo(params: FetchCompanyInfoParams = {}): Promise<FetchCompanyInfoResult> {
-  const res = await api.get(API_URL, { signal: params.signal });
-  const all = extractItems(res.data);
-  const search = (params.search ?? '').trim().toLowerCase();
-  const filtered = search ? all.filter((company) => company.fullName.toLowerCase().includes(search) || company.email.toLowerCase().includes(search) || company.address.toLowerCase().includes(search)) : all;
-  const start = params.start ?? 0;
-  const length = params.length ?? (filtered.length || 12);
-  return { items: filtered.slice(start, start + length), total: search ? filtered.length : extractTotal(res.data, all), filtered: filtered.length };
+  const res = await api.post(
+    API_URL,
+    {
+      draw: 1,
+      start: params.start ?? 0,
+      length: params.length ?? 12,
+      searchValue: params.search ?? '',
+      sortColumn: '',
+      sortDirection: '',
+    },
+    { signal: params.signal },
+  );
+  const data = res.data?.data ?? res.data?.items ?? res.data?.result ?? res.data?.records ?? res.data;
+  const items = extractItems(data);
+  return {
+    items,
+    total: res.data?.recordsTotal ?? res.data?.total ?? res.data?.totalCount ?? items.length,
+    filtered: res.data?.recordsFiltered ?? res.data?.filtered ?? res.data?.total ?? items.length,
+  };
 }
 
 export async function fetchCompanyInfoSelectList(): Promise<SelectListItem[]> {
-  const res = await api.get(API_URL);
+  const res = await api.post(API_URL, {});
   return extractItems(res.data).map((item) => ({ label: item.fullName, value: item.id }));
 }
 
@@ -98,11 +101,11 @@ export async function deleteCompanyInfo(id: number | string): Promise<{ success:
 }
 
 export const companyInfoService = {
-  serverSearch: (body: CompanyInfoServerSearchRequest, signal?: AbortSignal) => api.get<ApiListResponse<CompanyInfoItem>>(API_URL, { params: body, signal }),
+  serverSearch: (body: CompanyInfoServerSearchRequest, signal?: AbortSignal) => api.post<ApiListResponse<CompanyInfoItem>>(API_URL, body, { signal }),
   save: saveCompanyInfo,
   delete: deleteCompanyInfo,
   getById: (id: number | string) => api.get(`${GET_BY_ID_URL}/${id}`),
-  selectList: () => api.get(API_URL),
+  selectList: () => api.post(API_URL, {}),
   fetchCompanyInfo,
   fetchCompanyInfoSelectList,
   saveCompanyInfo,

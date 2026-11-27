@@ -38,25 +38,6 @@ function extractItems(payload: any): DeviceStatusItem[] {
   return [];
 }
 
-function extractTotal(payload: any, items: DeviceStatusItem[]): number {
-  const candidates = [
-    payload?.recordsTotal,
-    payload?.total,
-    payload?.totalCount,
-    payload?.count,
-    payload?.recordsFiltered,
-    payload?.data?.recordsTotal,
-    payload?.data?.total,
-    payload?.data?.totalCount,
-    payload?.data?.recordsFiltered,
-  ];
-  for (const c of candidates) {
-    const n = Number(c);
-    if (Number.isFinite(n) && n >= 0) return n;
-  }
-  return items.length;
-}
-
 function extractMessage(payload: any, fallback: string): string {
   return (
     payload?.message ??
@@ -71,30 +52,30 @@ function extractMessage(payload: any, fallback: string): string {
 export async function fetchDeviceStatus(
   params: FetchDeviceStatusParams
 ): Promise<FetchDeviceStatusResult> {
-  const res = await api.get(API_URL, { signal: params.signal });
-  const all = extractItems(res.data);
-  const search = (params.search ?? '').trim().toLowerCase();
-  const filtered = search
-    ? all.filter(
-        (s) =>
-          s.statusName.toLowerCase().includes(search) ||
-          s.code.toLowerCase().includes(search)
-      )
-    : all;
-  const start = params.start ?? 0;
-  const length = params.length ?? (filtered.length || 12);
-  const items = filtered.slice(start, start + length);
+  const res = await api.post(
+    API_URL,
+    {
+      draw: 1,
+      start: params.start ?? 0,
+      length: params.length ?? 12,
+      searchValue: params.search ?? '',
+      sortColumn: '',
+      sortDirection: '',
+    },
+    { signal: params.signal },
+  );
+  const data = res.data?.data ?? res.data?.items ?? res.data?.result ?? res.data?.records ?? res.data;
+  const items = extractItems(data);
   return {
     items,
-    total: search ? filtered.length : extractTotal(res.data, all),
-    filtered: filtered.length,
+    total: res.data?.recordsTotal ?? res.data?.total ?? res.data?.totalCount ?? items.length,
+    filtered: res.data?.recordsFiltered ?? res.data?.filtered ?? res.data?.total ?? items.length,
   };
 }
 
 export async function fetchDeviceStatusSelectList(
-  _params?: Record<string, unknown>
 ): Promise<SelectListItem[]> {
-  const res = await api.get(API_URL);
+  const res = await api.post(API_URL, {});
   return extractItems(res.data).map((item) => ({
     label: item.statusName,
     value: item.id,
@@ -188,11 +169,11 @@ export async function deleteDeviceStatus(
 
 export const deviceStatusService = {
   serverSearch: (body: DeviceStatusServerSearchRequest, signal?: AbortSignal) =>
-    api.get<ApiListResponse<DeviceStatusItem>>(API_URL, { params: body, signal }),
+    api.post<ApiListResponse<DeviceStatusItem>>(API_URL, body, { signal }),
   save: saveDeviceStatus,
   delete: deleteDeviceStatus,
   getById: (id: number | string) => api.get(`${GET_BY_ID_URL}/${id}`),
-  selectList: (params?: Record<string, unknown>) => api.get(API_URL, { params }),
+  selectList: (params?: Record<string, unknown>) => api.post(API_URL, params ?? {}),
   fetchDeviceStatus,
   fetchDeviceStatusSelectList,
   saveDeviceStatus,

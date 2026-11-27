@@ -37,13 +37,13 @@ export const DeviceInfo = () => {
   const selectedDeviceList = Object.values(selectedDevices);
   const selectedDeviceCount = selectedDeviceList.length;
 
-  const loadDevices = useCallback(async () => {
+  const loadDevices = useCallback(async (serialQuery: string) => {
     setLoading(true);
     try {
       const result = await fetchDevices({
         purchaseMasterId: purchaseFilter === 'all' ? undefined : purchaseFilter,
         deviceStatusId: statusFilter === 'all' ? undefined : statusFilter,
-        serialNo: serialSearch.trim() || undefined,
+        serialNo: serialQuery.trim() || undefined,
         start: (page - 1) * pageSize,
         length: pageSize,
       });
@@ -54,11 +54,12 @@ export const DeviceInfo = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, purchaseFilter, statusFilter, serialSearch]);
+  }, [page, pageSize, purchaseFilter, statusFilter]);
 
   useEffect(() => {
-    void loadDevices();
-  }, [loadDevices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void loadDevices(serialSearch);
+  }, [loadDevices, page, pageSize, purchaseFilter, statusFilter]);
 
   useEffect(() => {
     Promise.all([fetchPurchases({ length: 100000 }), fetchDeviceStatus({ length: 100000 })])
@@ -326,8 +327,12 @@ export const DeviceInfo = () => {
         searchValue={serialSearch}
         onSearchChange={(val) => {
           setSerialSearch(val);
+          setSelectedDevices({});
+        }}
+        onSearch={() => {
           setPage(1);
           setSelectedDevices({});
+          void loadDevices(serialSearch);
         }}
         showFilterButton={true}
         filtersOpen={filtersOpen}

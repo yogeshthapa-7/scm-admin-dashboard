@@ -7,6 +7,7 @@ import {
 } from '@/auth/services/auth-session';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const CLIENT_CODE = import.meta.env.VITE_CLIENT_CODE;
 const REFRESH_URL = `${API_BASE_URL}/Auth/refresh`;
 
 const api = axios.create({
@@ -14,6 +15,7 @@ const api = axios.create({
   timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
+    ...(CLIENT_CODE ? { 'X-Client-Code': CLIENT_CODE } : {}),
   },
 });
 
@@ -68,7 +70,13 @@ async function requestTokenRefresh(): Promise<string> {
   const refreshResponse = await axios.post(
     REFRESH_URL,
     { refreshToken },
-    { headers: { 'Content-Type': 'application/json' }, timeout: 15000 },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(CLIENT_CODE ? { 'X-Client-Code': CLIENT_CODE } : {}),
+      },
+      timeout: 15000,
+    },
   );
 
   const payload = refreshResponse.data ?? {};
@@ -112,6 +120,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers = config.headers ?? ({} as any);
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (CLIENT_CODE) {
+      config.headers = config.headers ?? ({} as any);
+      config.headers['X-Client-Code'] = CLIENT_CODE;
     }
     return config;
   },

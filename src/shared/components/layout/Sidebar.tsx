@@ -16,6 +16,15 @@ import { useEffect } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import scmLogo from '@/assets/images/new_scm_logo.png';
 import scmCollapsedLogo from '@/assets/images/scm_collapsed.png';
+import evoluteLogo from '@/assets/images/evolute.png';
+import evoluteCollapsedLogo from '@/assets/images/evolute_collapse.png';
+
+const CLIENT_CODE = import.meta.env.VITE_CLIENT_CODE;
+
+const getClientLogo = () => {
+  if (CLIENT_CODE === 'EVOLUTE') return { expanded: evoluteLogo, collapsed: evoluteCollapsedLogo };
+  return { expanded: scmLogo, collapsed: scmCollapsedLogo };
+};
 
 const { Sider } = Layout;
 
@@ -68,7 +77,8 @@ export const Sidebar = ({ open, onClose, collapsed }: SidebarProps) => {
   }, [location.pathname, onClose]);
 
   const sidebarContent = (isCollapsed: boolean) => {
-    const logo = isCollapsed ? scmCollapsedLogo : scmLogo;
+    const { expanded, collapsed } = getClientLogo();
+    const logo = isCollapsed ? collapsed : expanded;
     return (
       <div className="sidebar-content">
         <div style={{ paddingTop: 0, paddingBottom: 8, textAlign: 'center' }}>

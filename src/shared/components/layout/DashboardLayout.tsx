@@ -17,6 +17,8 @@ const PAGE_LABELS: Record<string, string> = {
   '/purchase': 'Purchase',
   '/device': 'Device',
   '/reports': 'Reports',
+  '/users': 'Users',
+  '/device-status-change-record': 'Device Status Change Record',
 };
 
 export const DashboardLayout = () => {

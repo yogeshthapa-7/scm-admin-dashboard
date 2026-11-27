@@ -40,6 +40,7 @@ export interface PageToolbarCardProps {
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
+  onSearch?: () => void;
   showFilterButton?: boolean;
   filtersOpen?: boolean;
   onToggleFilters?: () => void;
@@ -52,6 +53,7 @@ export const PageToolbarCard: React.FC<PageToolbarCardProps> = ({
   searchPlaceholder = 'Search...',
   searchValue = '',
   onSearchChange,
+  onSearch,
   showFilterButton = true,
   filtersOpen = false,
   onToggleFilters,
@@ -62,16 +64,27 @@ export const PageToolbarCard: React.FC<PageToolbarCardProps> = ({
   return (
     <div className={`mb-4 flex flex-col gap-3 ${className}`}>
       <div className="w-full bg-white dark:bg-[#1e2538] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 shadow-sm flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex-1 min-w-[260px] max-w-md">
+        <div className="flex-1 min-w-[260px] max-w-md flex items-center gap-2">
           {onSearchChange && (
-            <Input
-              allowClear
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value)}
-              suffix={<Search size={17} className="text-slate-500 dark:text-slate-300" />}
-              className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-[#171d2b] dark:text-slate-100 text-sm"
-            />
+            <>
+              <Input
+                allowClear
+                placeholder={searchPlaceholder}
+                value={searchValue}
+                onChange={(e) => onSearchChange(e.target.value)}
+                suffix={<Search size={17} className="text-slate-500 dark:text-slate-300" />}
+                className="h-10 rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-[#171d2b] dark:text-slate-100 text-sm"
+              />
+              {onSearch && (
+                <Button
+                  type="primary"
+                  onClick={onSearch}
+                  className="!h-10 px-4 rounded-lg font-medium text-sm flex items-center gap-1.5 bg-blue-600 hover:!bg-blue-700 text-white border-0 shadow-sm"
+                >
+                  <Search size={16} /> Search
+                </Button>
+              )}
+            </>
           )}
         </div>
         <div className="flex items-center gap-3">

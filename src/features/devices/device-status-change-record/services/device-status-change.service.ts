@@ -34,28 +34,28 @@ function extractItems(payload: any): DeviceStatusChangeRecord[] {
 export async function fetchDeviceStatusChangeRecords(
   params: DeviceStatusChangeParams = {},
 ): Promise<DeviceStatusChangeResult> {
-  const res = await api.get(GET_ALL_STATUS_CHANGE_URL, {
-    params: {
-      ...(params.deviceInfoId ? { deviceInfoId: params.deviceInfoId } : {}),
-      ...(params.search ? { search: params.search } : {}),
-    },
-    signal: params.signal,
-  });
-  const all = extractItems(res.data);
-  const search = (params.search ?? '').trim().toLowerCase();
-  const filtered = search
-    ? all.filter(
-        (r) =>
-          String(r.deviceSerialNo).toLowerCase().includes(search) ||
-          String(r.narration).toLowerCase().includes(search) ||
-          String(r.changeBy).toLowerCase().includes(search) ||
-          String(r.targetStatusName).toLowerCase().includes(search),
-      )
-    : all;
-  const start = params.start ?? 0;
-  const length = params.length ?? (filtered.length || 12);
-  const items = filtered.slice(start, start + length);
-  return { items, total: filtered.length, filtered: filtered.length };
+  const requestBody: Record<string, unknown> = {
+    draw: 1,
+    start: params.start ?? 0,
+    length: params.length ?? 12,
+    searchValue: params.search ?? '',
+    sortColumn: '',
+    sortDirection: '',
+  };
+  if (params.deviceInfoId != null) requestBody.deviceInfoId = params.deviceInfoId;
+
+  const res = await api.post(
+    GET_ALL_STATUS_CHANGE_URL,
+    requestBody,
+    { signal: params.signal },
+  );
+  const data = res.data?.data ?? res.data?.items ?? res.data?.result ?? res.data?.records ?? res.data;
+  const items = extractItems(data);
+  return {
+    items,
+    total: res.data?.recordsTotal ?? res.data?.total ?? res.data?.totalCount ?? items.length,
+    filtered: res.data?.recordsFiltered ?? res.data?.filtered ?? res.data?.total ?? items.length,
+  };
 }
 
 export async function fetchDeviceStatusChangeRecordById(
