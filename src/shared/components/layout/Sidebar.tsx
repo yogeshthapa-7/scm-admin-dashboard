@@ -8,6 +8,7 @@ import {
   Monitor,
   ShoppingCart,
   Cpu,
+  History,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -36,6 +37,7 @@ const menuItems = [
     children: [
       { key: '/purchase', label: 'Purchase', icon: <ShoppingCart size={20} /> },
       { key: '/device', label: 'Device', icon: <Cpu size={20} /> },
+      { key: '/device-status-change-record', label: 'Device Status Change Record', icon: <History size={20} /> },
     ],
   },
   { key: '/reports', icon: <BarChart3 size={20} />, label: 'Report' },
