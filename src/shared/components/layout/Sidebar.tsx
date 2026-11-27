@@ -81,7 +81,7 @@ export const Sidebar = ({ open, onClose, collapsed }: SidebarProps) => {
     const logo = isCollapsed ? collapsed : expanded;
     return (
       <div className="sidebar-content">
-        <div style={{ paddingTop: 0, paddingBottom: 8, textAlign: 'center' }}>
+        <div style={{ paddingTop: 0, paddingBottom: 8, padding:20, textAlign: 'center' }}>
           <img src={logo} alt="SCM" className={isCollapsed ? 'sidebar-logo sidebar-logo-collapsed' : 'sidebar-logo'} />
           {!isCollapsed && <div className="sidebar-slogan">Biometric Access Control</div>}
         </div>

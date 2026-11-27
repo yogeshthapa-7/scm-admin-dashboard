@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type Key } from 'react';
+import { useCallback, useEffect, useRef, useState, type Key } from 'react';
 import { Button, Form, Input, Modal, Select, Space, message } from 'antd';
 import { RefreshCw } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -37,7 +37,10 @@ export const DeviceInfo = () => {
   const selectedDeviceList = Object.values(selectedDevices);
   const selectedDeviceCount = selectedDeviceList.length;
 
-  const loadDevices = useCallback(async (serialQuery: string) => {
+  const serialSearchRef = useRef(serialSearch);
+  serialSearchRef.current = serialSearch;
+
+  const loadDevices = useCallback(async (serialQuery: string = serialSearchRef.current) => {
     setLoading(true);
     try {
       const result = await fetchDevices({
