@@ -81,6 +81,7 @@ function extractUser(payload: any, fallbackUserName: string): AuthUser {
 export async function login(payload: LoginPayload): Promise<LoginResult> {
   const userName = (payload.userName || '').trim();
   const password = payload.password || '';
+  const rememberMe = Boolean(payload.remember);
 
   if (!userName || !password) {
     return { success: false, message: 'Please enter username and password.' };
@@ -97,10 +98,10 @@ export async function login(payload: LoginPayload): Promise<LoginResult> {
     const user = extractUser(res.data, userName);
 
     if (accessToken) {
-      setTokens({ accessToken, refreshToken, accessTokenExpiresAt, refreshTokenExpiresAt });
+      setTokens({ accessToken, refreshToken, accessTokenExpiresAt, refreshTokenExpiresAt }, rememberMe);
     }
-    persistAuthUser(user);
-    setAuthenticated(true);
+    persistAuthUser(user, rememberMe);
+    setAuthenticated(true, rememberMe);
 
     return { success: true, user, token: accessToken ?? undefined, message: extractMessage(res.data, 'Login successful') };
   } catch (error: any) {

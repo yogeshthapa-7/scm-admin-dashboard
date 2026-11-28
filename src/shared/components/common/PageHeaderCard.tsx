@@ -77,9 +77,9 @@ export const PageToolbarCard: React.FC<PageToolbarCardProps> = ({
               />
               {onSearch && (
                 <Button
-                  type="primary"
                   onClick={onSearch}
-                  className="!h-10 px-4 rounded-lg font-medium text-sm flex items-center gap-1.5 bg-blue-600 hover:!bg-blue-700 text-white border-0 shadow-sm"
+                  size="small"
+                  className="h-10 px-3 rounded-lg font-medium text-sm border border-slate-300 dark:border-slate-700 text-white bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 hover:border-blue-700"
                 >
                   <Search size={16} /> Search
                 </Button>
